@@ -746,9 +746,9 @@ ChatCommand * ChatHandler::getCommandTable()
         { "notify",         SEC_MODERATOR,      true,  &ChatHandler::HandleNotifyCommand,              "", NULL },
         { "gmnotify",       SEC_MODERATOR,      true,  &ChatHandler::HandleGMNotifyCommand,            "", NULL },
         { "appear",         SEC_MODERATOR,      false, &ChatHandler::HandleAppearCommand,              "", NULL },
-        { "goname",         SEC_MODERATOR,      false, &ChatHandler::HandleAppearCommand>,              "", NULL },			
+        { "goname",         SEC_MODERATOR,      false, &ChatHandler::HandleAppearCommand,              "", NULL },			
         { "summon",         SEC_MODERATOR,      false, &ChatHandler::HandleSummonCommand,              "", NULL },
-        { "namego",         SEC_MODERATOR,      false, &ChatHandler::HandleSummonCommand>,              "", NULL },				
+        { "namego",         SEC_MODERATOR,      false, &ChatHandler::HandleSummonCommand,              "", NULL },				
         { "groupsummon",    SEC_MODERATOR,      false, &ChatHandler::HandleGroupSummonCommand,         "", NULL },
         { "commands",       SEC_PLAYER,         true,  &ChatHandler::HandleCommandsCommand,            "", NULL },
         { "demorph",        SEC_GAMEMASTER,     false, &ChatHandler::HandleDeMorphCommand,             "", NULL },
@@ -800,14 +800,14 @@ ChatCommand * ChatHandler::getCommandTable()
         { "repairitems",    SEC_GAMEMASTER,     true,  &ChatHandler::HandleRepairitemsCommand,         "", NULL },
         { "waterwalk",      SEC_GAMEMASTER,     false, &ChatHandler::HandleWaterwalkCommand,           "", NULL },
 		//Allows your players to gamble for fun and prizes
-        { "gamble",         SEC_PLAYER,         false, &ChatHandler::HandleGambleCommand>,              "", NULL },	
-        { "roulette",       SEC_PLAYER,         false, &ChatHandler::HandleRouletteCommand>,            "", NULL },
+        { "gamble",         SEC_PLAYER,         false, &ChatHandler::HandleGambleCommand,              "", NULL },	
+        { "roulette",       SEC_PLAYER,         false, &ChatHandler::HandleRouletteCommand,            "", NULL },
 		//Mall Teleporter
-		{ "mall",			SEC_PLAYER,			false, &ChatHandler::HandleMallCommand>,				"", NULL }, 		
+		{ "mall",			SEC_PLAYER,			false, &ChatHandler::HandleMallCommand,				"", NULL }, 		
 		//Buffer
-		{ "buffs",			SEC_PLAYER,			false, &ChatHandler::HandleBuffsCommand>,				"", NULL }, 
+		{ "buffs",			SEC_PLAYER,			false, &ChatHandler::HandleBuffsCommand,				"", NULL }, 
 		//GuildHouse Tele
-		{ "gh",             SEC_PLAYER,      	false, &ChatHandler::HandleGHCommand>,				"", NULL },	
+		{ "gh",             SEC_PLAYER,      	false, &ChatHandler::HandleGHCommand,				"", NULL },	
         { "freeze",         SEC_MODERATOR,      false, &ChatHandler::HandleFreezeCommand,              "", NULL },
         { "unfreeze",       SEC_MODERATOR,      false, &ChatHandler::HandleUnFreezeCommand,            "", NULL },
         { "listfreeze",     SEC_MODERATOR,      false, &ChatHandler::HandleListFreezeCommand,          "", NULL },
