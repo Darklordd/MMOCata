@@ -258,7 +258,7 @@ bool ChatHandler::HandleGHCommand(const char* args)
         if(chr->isInFlight())
         {
                 //pokud hrac leti
-                SendSysMessage(LANG_YOU_IN_FLIGHT);
+                SendSysMessage("Du fliegst gerade!");
                 SetSentErrorMessage(true);
                 return false;
         }
@@ -266,7 +266,7 @@ bool ChatHandler::HandleGHCommand(const char* args)
         if(chr->isInCombat())
         {
                 //pokud je hrac v combatu
-                SendSysMessage(LANG_YOU_IN_COMBAT);
+                SendSysMessage("Du befindest dich im Kampf!");
                 SetSentErrorMessage(true);
                 return false;
         }
@@ -282,7 +282,7 @@ bool ChatHandler::HandleGHCommand(const char* args)
         if(result == NULL)
         {
                 //pokud guilda nema guildhouse zapsany v tabulce guildhouses
-                SendSysMessage(LANG_ERROR_GHPORT);
+                SendSysMessage(Du hast kein Gildenhaus!);
                 return false;
         }
 
