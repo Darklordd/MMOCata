@@ -94,6 +94,215 @@ bool ChatHandler::HandleStartCommand(const char* /*args*/)
     return true;
 }
 
+//Allows your players to gamble for fun and prizes
+bool ChatHandler::HandleGambleCommand(const char* args)
+{
+    Player *chr = m_session->GetPlayer();
+
+    char* px = strtok((char*)args, " ");
+
+    if (!px)
+        return false;
+
+    uint32 money = (uint32)atoi(px);
+
+    if (chr->GetMoney() < money)
+    {
+        SendSysMessage("Du kannst kein Gold setzen welches du nicht hast!");
+        return true;
+    }
+
+    else
+    {
+        if (money>0)
+        {
+             //if (rand()%100 < 50)
+			 if (rand()%100 < 40)
+             {
+				  chr->ModifyMoney(money);	
+                  //chr->ModifyMoney(money*2);
+                  SendSysMessage("Du hast gewonnen und einen Einsatz verdoppelt");
+             }
+             else
+             {
+                  chr->ModifyMoney(-int(money));
+                  SendSysMessage("Du hast verloren");
+             }  
+        }
+    }
+
+    return true;
+}
+
+bool ChatHandler::HandleRouletteCommand(const char* args)
+{
+    Player *chr = m_session->GetPlayer();
+
+    char* px = strtok((char*)args, " ");
+
+    if (!px)
+        return false;
+
+    uint32 money = (uint32)atoi(px);
+
+    if (chr->GetMoney() < money)
+    {
+        SendSysMessage("Du kannst kein Gold setzen welches du nicht hast!");
+        return true;
+    }
+
+    else
+    {
+        if (money>0)
+        {
+             //if (rand()%36 < 1)
+			 if (rand()%42 < 1)
+             {
+                  chr->ModifyMoney(money*36);
+                  SendSysMessage("Du hast das 36x deines Einsatzes gewonnen, GZ!");
+             }
+             else
+             {
+                  chr->ModifyMoney(-int(money));
+                  SendSysMessage("Du hast verloren");
+             }  
+        }
+    }
+
+     return true;
+ }
+
+//Mall Teleporter
+bool ChatHandler::HandleMallCommand(const char* /*args*/)
+{
+        //MALL command
+        
+        Player *chr = m_session->GetPlayer();
+
+        if (chr->isInCombat())
+        {
+        SendSysMessage(LANG_YOU_IN_COMBAT);
+        SetSentErrorMessage(true);
+        return false;
+        }
+        if (chr->isInFlight())
+        {
+        SendSysMessage(LANG_YOU_IN_FLIGHT);
+        SetSentErrorMessage(true);
+        return false;
+        }
+
+        chr->ResurrectPlayer(0.5, false);
+
+        switch(chr->GetTeam())
+   {
+        case ALLIANCE:
+                chr->TeleportTo(0, -8865.454102f, 591.230469f, 92.323326f, 4.69254f);    // Insert Ally mall Cords here
+                break;
+
+        case HORDE:
+                        chr->TeleportTo(1, 1554.14f, -4424.46f, 9.86212f, 5.96413f);    // Insert Horde mall Cords here
+                break;
+   }
+        return true;
+}
+
+//Buffer
+bool ChatHandler::HandleBuffsCommand(const char* /*args*/)              
+{
+                                Player *chr = m_session->GetPlayer();
+                                
+        if (chr->isInCombat())
+        {
+        SendSysMessage("Du kannst dich nicht während eines Kampfes buffen");
+        SetSentErrorMessage(true);
+        return false;
+        }
+        if (chr->isInFlight())
+        {
+        SendSysMessage("Du kannste dich nicht während des Fliegens buffen");
+        SetSentErrorMessage(true);
+        return false;
+        }
+                
+        if (chr->GetMoney() >= 2000000)
+                {
+                                chr->Unmount();
+                                chr->RemoveAurasByType(SPELL_AURA_MOUNTED);
+                                chr-> AddAura(48161, chr);              // Power Word: Fortitude        
+                                chr-> AddAura(48073, chr);              // Divine Spirit
+                                chr-> AddAura(20217, chr);              // Blessing of Kings
+                                chr-> AddAura(48469, chr);              // Mark of the wild
+                                chr-> AddAura(16609, chr);              // Spirit of Zandalar
+                                chr-> AddAura(15366, chr);              // Songflower Serenade
+                                chr-> AddAura(22888, chr);              // Rallying Cry of the Dragonslayer
+                                chr-> AddAura(57399, chr);              // Well Fed
+                                chr-> AddAura(17013, chr);              // Agamaggan's Agility
+                                chr-> AddAura(16612, chr);              // Agamaggan's Strength
+                                chr->ModifyMoney(-2000000);
+                                SendSysMessage("Du bist jetzt gebufft!");
+                                return false;
+                }
+        else
+                {
+                SendSysMessage("Du hast nicht genug Gold!");
+        }
+                return false;
+}	
+
+//GuildHouse Tele
+bool ChatHandler::HandleGHCommand(const char* args)
+{
+        Player *chr = m_session->GetPlayer();
+
+        if(chr->isInFlight())
+        {
+                //pokud hrac leti
+                SendSysMessage(LANG_YOU_IN_FLIGHT);
+                SetSentErrorMessage(true);
+                return false;
+        }
+
+        if(chr->isInCombat())
+        {
+                //pokud je hrac v combatu
+                SendSysMessage(LANG_YOU_IN_COMBAT);
+                SetSentErrorMessage(true);
+                return false;
+        }
+
+        if (chr->GetGuildId() == 0)
+        {
+                //pokud hrac nema guildu
+                return false;
+        }
+
+        QueryResult result;
+            result = CharacterDatabase.PQuery("SELECT `x`, `y`, `z`, `map` FROM `guildhouses` WHERE `guildId` = %u", chr->GetGuildId());
+        if(result == NULL)
+        {
+                //pokud guilda nema guildhouse zapsany v tabulce guildhouses
+                SendSysMessage(LANG_ERROR_GHPORT);
+                return false;
+        }
+
+
+        float x, y, z;
+        uint32 map;
+
+        Field *fields = result->Fetch();
+        x = fields[0].GetFloat();
+        y = fields[1].GetFloat();
+        z = fields[2].GetFloat();
+        map = fields[3].GetUInt32();
+        
+
+        chr->SaveRecallPosition();
+        chr->TeleportTo(map, x, y, z, 0);
+        chr->SaveToDB();
+        return true;
+}
+
 bool ChatHandler::HandleServerInfoCommand(const char* /*args*/)
 {
     uint32 PlayersNum = sWorld.GetPlayerCount();
