@@ -201,7 +201,7 @@ bool ChatHandler::HandleMallCommand(const char* /*args*/)
                 break;
 
         case HORDE:
-                        chr->TeleportTo(1, 1554.14f, -4424.46f, 9.86212f, 5.96413f);    // Insert Horde mall Cords here
+                        chr->TeleportTo(1, 1566.470459, -4398.960449, 16.259722, 0.548813);    // Insert Horde mall Cords here						
                 break;
    }
         return true;
