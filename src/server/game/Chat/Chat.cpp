@@ -806,8 +806,6 @@ ChatCommand * ChatHandler::getCommandTable()
 		{ "mall",			SEC_PLAYER,			false, &ChatHandler::HandleMallCommand,				"", NULL }, 		
 		//Buffer
 		{ "buffs",			SEC_PLAYER,			false, &ChatHandler::HandleBuffsCommand,				"", NULL }, 
-		//GuildHouse Tele
-		{ "gh",             SEC_PLAYER,      	false, &ChatHandler::HandleGHCommand,				"", NULL },	
         { "freeze",         SEC_MODERATOR,      false, &ChatHandler::HandleFreezeCommand,              "", NULL },
         { "unfreeze",       SEC_MODERATOR,      false, &ChatHandler::HandleUnFreezeCommand,            "", NULL },
         { "listfreeze",     SEC_MODERATOR,      false, &ChatHandler::HandleListFreezeCommand,          "", NULL },
