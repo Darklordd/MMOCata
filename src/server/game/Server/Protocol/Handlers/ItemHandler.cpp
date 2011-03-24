@@ -705,10 +705,10 @@ void WorldSession::HandleBuyItemOpcode(WorldPacket & recv_data)
 {
     sLog.outDebug("WORLD: Received CMSG_BUY_ITEM");
     uint64 vendorguid;
-	uint8 unk;
+    uint8 unk;
     uint32 item, slot, count;
     uint64 unk1;
-	uint8 unk2;
+    uint8 unk2;
 
     recv_data >> vendorguid;
     recv_data >> unk;                                       // 4.0.6
@@ -762,7 +762,7 @@ void WorldSession::SendListInventory(uint64 vendorguid)
     VendorItemData const* vItems = pCreature->GetVendorItems();
     if (!vItems)
     {
-        WorldPacket data(SMSG_LIST_INVENTORY, (8 + 1 + 1));
+        WorldPacket data(SMSG_LIST_INVENTORY, (8+1+1+2), true);
         data << uint64(vendorguid);
         data << uint8(0);                                   // count==0, next will be error code
         data << uint8(0);                                   // "Vendor has no inventory"
@@ -770,19 +770,18 @@ void WorldSession::SendListInventory(uint64 vendorguid)
         return;
     }
 
-    uint8 numitems = vItems->GetItemCount();
+    uint32 numitems = vItems->GetItemCount();
     uint8 count = 0;
 
-	WorldPacket data(SMSG_MULTIPLE_PACKETS, (8+1+numitems*9*4+1*numitems+2));
-	data << uint16(SMSG_LIST_INVENTORY);
-	data << uint64(vendorguid);
+    WorldPacket data(SMSG_LIST_INVENTORY, (8+1+numitems*9*4+1*numitems+2), true);
+    data << uint64(vendorguid);
 
     size_t count_pos = data.wpos();
     data << uint8(count);
 
     float discountMod = _player->GetReputationPriceDiscount(pCreature);
 
-    for (uint8 vendorslot = 0; vendorslot < numitems; ++vendorslot )
+    for (uint32 vendorslot = 0; vendorslot < numitems; ++vendorslot )
     {
         if (VendorItem const* crItem = vItems->GetItem(vendorslot))
         {
@@ -795,6 +794,8 @@ void WorldSession::SendListInventory(uint64 vendorguid)
                 if (!_player->isGameMaster() && ((pProto->Flags2 & ITEM_FLAGS_EXTRA_HORDE_ONLY && _player->GetTeam() == ALLIANCE) || (pProto->Flags2 == ITEM_FLAGS_EXTRA_ALLIANCE_ONLY && _player->GetTeam() == HORDE)))
                     continue;
                 ++count;
+                if(count == 150)
+                    break; // client can only display 15 pages
 
                 // reputation discount
                 int32 price = crItem->IsGoldRequired(pProto) ? uint32(floor(pProto->BuyPrice * discountMod)) : 0;
