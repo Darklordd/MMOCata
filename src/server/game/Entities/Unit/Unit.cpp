@@ -6844,14 +6844,7 @@ bool Unit::HandleDummyAuraProc(Unit *pVictim, uint32 damage, AuraEffect* trigger
                     uint32 spellId;
                     switch (castItem->GetEnchantmentId(EnchantmentSlot(TEMP_ENCHANTMENT_SLOT)))
                     {
-                        case 283: spellId =  8232; break;   // 1 Rank
-                        case 284: spellId =  8235; break;   // 2 Rank
-                        case 525: spellId = 10486; break;   // 3 Rank
-                        case 1669:spellId = 16362; break;   // 4 Rank
-                        case 2636:spellId = 25505; break;   // 5 Rank
-                        case 3785:spellId = 58801; break;   // 6 Rank
-                        case 3786:spellId = 58803; break;   // 7 Rank
-                        case 3787:spellId = 58804; break;   // 8 Rank
+                        case 283: spellId =  8232; break;
                         default:
                         {
                             sLog.outError("Unit::HandleDummyAuraProc: non handled item enchantment (rank?) %u for spell id: %u (Windfury)",
@@ -6877,8 +6870,8 @@ bool Unit::HandleDummyAuraProc(Unit *pVictim, uint32 damage, AuraEffect* trigger
                     if (cooldown)
                         ToPlayer()->AddSpellCooldown(dummySpell->Id,0,time(NULL) + cooldown);
 
-                    // Attack Twice
-                    for (uint32 i = 0; i<2; ++i)
+                    // triggering three extra attacks
+                    for (uint32 i = 0; i < 3; ++i)
                         CastCustomSpell(pVictim,triggered_spell_id,&basepoints0,NULL,NULL,true,castItem,triggeredByAura);
 
                     return true;
@@ -8043,25 +8036,37 @@ bool Unit::HandleProcTriggerSpell(Unit *pVictim, uint32 damage, AuraEffect* trig
             }
             case SPELLFAMILY_HUNTER:
             {
-                if (auraSpellInfo->SpellIconID == 3247)     // Piercing Shots
+                if (auraSpellInfo->SpellIconID == 3247)     // Piercing Shots 1,2,3
                 {
-                    switch (auraSpellInfo->Id)
-                    {
-                        case 53234:  // Rank 1
-                        case 53237:  // Rank 2
-                        case 53238:  // Rank 3
-                            trigger_spell_id = 63468;
-                            break;
-                        default:
-                            sLog.outError("Unit::HandleProcTriggerSpell: Spell %u miss posibly Piercing Shots",auraSpellInfo->Id);
-                            return false;
-                    }
+                    trigger_spell_id = 63468;
                     SpellEntry const *TriggerPS = sSpellStore.LookupEntry(trigger_spell_id);
                     if (!TriggerPS)
                         return false;
-
-                    basepoints0 = int32(damage * triggerAmount / 100 / (GetSpellMaxDuration(TriggerPS) / TriggerPS->EffectAmplitude[0]));
+                    basepoints0 = int32((damage * (auraSpellInfo->EffectBasePoints[0] / 100)) / (GetSpellMaxDuration(TriggerPS) / 1000));
                     basepoints0 += pVictim->GetRemainingDotDamage(GetGUID(), trigger_spell_id);
+                    break;
+                }
+                if (auraSpellInfo->SpellIconID == 2225)     // Serpent Spread 1,2
+                {
+                    if ( !(auraSpellInfo->procFlags == 0x1140) )
+                        return false;
+
+                    switch (auraSpellInfo->Id)
+                    {
+                        case 87934:     trigger_spell_id = 88453; break;
+                        case 87935:     trigger_spell_id = 88466; break;
+                        default:
+                            return false;
+                    }
+                    break;
+                }
+                if (auraSpellInfo->Id == 82661)       // Aspect of the Fox: Focus bonus
+                {
+                    if ( !((auraSpellInfo->procFlags & PROC_FLAG_TAKEN_MELEE_AUTO_ATTACK) || (auraSpellInfo->procFlags & PROC_FLAG_TAKEN_SPELL_MELEE_DMG_CLASS)) )
+                        return false;
+                    target = this;
+                    basepoints0 = auraSpellInfo->EffectBasePoints[0];
+                    trigger_spell_id = 82716;
                     break;
                 }
                 break;
@@ -8545,6 +8550,19 @@ bool Unit::HandleProcTriggerSpell(Unit *pVictim, uint32 damage, AuraEffect* trig
             // 5 rank -> 100% 4 rank -> 80% and etc from full rate
             if (!roll_chance_i(20*rank))
                 return false;
+            break;
+        }
+        // Rolling Thunder
+        case 88765:
+        {
+            if (Aura * lightningShield = GetAura(324))
+            {
+                uint8 lsCharges = lightningShield->GetCharges();
+                if(lsCharges < 9)
+                {
+                    lightningShield->SetCharges(lsCharges + 1);
+                }
+            }
             break;
         }
         // Astral Shift
@@ -9603,17 +9621,17 @@ void Unit::SetMinion(Minion *minion, bool apply, PetSlot slot)
     }
 }
 
-void Unit::GetAllMinionsByEntry(std::list<Creature*>& Minions, uint32 entry)
-{
-    for (Unit::ControlList::iterator itr = m_Controlled.begin(); itr != m_Controlled.end();)
-    {
-        Unit *unit = *itr;
-        ++itr;
-        if (unit->GetEntry() == entry && unit->GetTypeId() == TYPEID_UNIT
-            && unit->ToCreature()->isSummon()) // minion, actually
-            Minions.push_back(unit->ToCreature());
-    }
-}
+//void Unit::GetAllMinionsByEntry(std::list<Creature*>& Minions, uint32 entry)
+//{
+//    for (Unit::ControlList::iterator itr = m_Controlled.begin(); itr != m_Controlled.end();)
+//    {
+//        Unit *unit = *itr;
+//        ++itr;
+//        if (unit->GetEntry() == entry && unit->GetTypeId() == TYPEID_UNIT
+//            && unit->ToCreature()->isSummon()) // minion, actually
+//            Minions.push_back(unit->ToCreature());
+//    }
+//}
 
 void Unit::RemoveAllMinionsByEntry(uint32 entry)
 {
@@ -10474,7 +10492,10 @@ int32 Unit::SpellBaseDamageBonus(SpellSchoolMask schoolMask)
         for (AuraEffectList::const_iterator i =mDamageDonebyAP.begin(); i != mDamageDonebyAP.end(); ++i)
             if ((*i)->GetMiscValue() & schoolMask)
                 DoneAdvertisedBenefit += int32(GetTotalAttackPowerValue(BASE_ATTACK) * (*i)->GetAmount() / 100.0f);
-
+        // TODO this should modify PLAYER_FIELD_MOD_SPELL_POWER_PCT instead of all the separate power fields
+        int32 spModPct = GetMaxPositiveAuraModifier(SPELL_AURA_MOD_SPELL_POWER_PCT);
+        // should it apply to non players as well?
+        DoneAdvertisedBenefit += DoneAdvertisedBenefit * spModPct / 100;
     }
     return DoneAdvertisedBenefit > 0 ? DoneAdvertisedBenefit : 0;
 }
@@ -11049,6 +11070,11 @@ int32 Unit::SpellBaseHealingBonus(SpellSchoolMask schoolMask)
         for (AuraEffectList::const_iterator i = mHealingDonebyAP.begin(); i != mHealingDonebyAP.end(); ++i)
             if ((*i)->GetMiscValue() & schoolMask)
                 AdvertisedBenefit += int32(GetTotalAttackPowerValue(BASE_ATTACK) * (*i)->GetAmount() / 100.0f);
+
+        // TODO this should modify PLAYER_FIELD_MOD_SPELL_POWER_PCT instead of all the separate power fields
+        int32 spModPct = GetMaxPositiveAuraModifier(SPELL_AURA_MOD_SPELL_POWER_PCT);
+        // should it apply to non players as well?
+        AdvertisedBenefit += AdvertisedBenefit * spModPct / 100;
     }
     return AdvertisedBenefit;
 }
