@@ -390,7 +390,7 @@ pAuraEffectHandler AuraEffectHandler[TOTAL_AURAS]=
     &AuraEffect::HandleNULL,                                      //330
     &AuraEffect::HandleNULL,                                      //331
     &AuraEffect::HandleNULL,                                      //332
-    &AuraEffect::HandleNULL,                                      //333
+    &AuraEffect::HandleModTrapLauncher,                           //333 SPELL_AURA_MOD_TRAP_LAUNCHER
     &AuraEffect::HandleNULL,                                      //334
     &AuraEffect::HandleNULL,                                      //335
     &AuraEffect::HandleNULL,                                      //336
@@ -410,7 +410,7 @@ pAuraEffectHandler AuraEffectHandler[TOTAL_AURAS]=
     &AuraEffect::HandleNULL,                                      //350
     &AuraEffect::HandleNULL,                                      //351
     &AuraEffect::HandleNULL,                                      //352
-    &AuraEffect::HandleNULL,                                      //353
+    &AuraEffect::HandleModCamouflage,                             //353 SPELL_AURA_CAMOUFLAGE
 };
 
 AuraEffect::AuraEffect(Aura *base, uint8 effIndex, int32 *baseAmount, Unit *caster) :
@@ -820,7 +820,7 @@ int32 AuraEffect::CalculateAmount(Unit *caster)
                     const MountCapabilityEntry *cap = sMountCapabilityStore.LookupEntry(type->capabilities[i]);
                     if(!cap)
                         continue;
-                    if(cap->map != -1 && cap->map != map)
+                    if(cap->map != ((uint32)-1) && cap->map != map)
                         continue;
                     if(cap->reqSkillLevel > plrskill || cap->reqSkillLevel <= maxSkill)
                         continue;
@@ -2876,6 +2876,30 @@ void AuraEffect::HandleInvisibility(AuraApplication const *aurApp, uint8 mode, b
     }
 }
 
+//TODO: Finish this aura
+void AuraEffect::HandleModTrapLauncher(AuraApplication const *aurApp, uint8 mode, bool apply) const
+{
+}
+
+//TODO: Finish this aura
+void AuraEffect::HandleModCamouflage(AuraApplication const *aurApp, uint8 mode, bool apply) const
+{
+    if (!(mode & AURA_EFFECT_HANDLE_SEND_FOR_CLIENT_MASK))
+        return;
+
+    Unit *target = aurApp->GetTarget();
+
+    if (apply)
+    {
+        target->CastSpell(target,80326,true);
+    }
+    else if (!(target->isCamouflaged()))
+    {
+        target->RemoveAura(80326);
+        target->RemoveAura(80325);
+    }
+}
+
 void AuraEffect::HandleModStealth(AuraApplication const *aurApp, uint8 mode, bool apply) const
 {
     if (!(mode & AURA_EFFECT_HANDLE_SEND_FOR_CLIENT_MASK))
@@ -2908,7 +2932,6 @@ void AuraEffect::HandleModStealth(AuraApplication const *aurApp, uint8 mode, boo
         target->RemoveStandFlags(UNIT_STAND_FLAGS_CREEP);
         if (target->GetTypeId() == TYPEID_PLAYER)
             target->RemoveByteFlag(PLAYER_FIELD_BYTES2, 3, PLAYER_FIELD_BYTE2_STEALTH);
-
         if (target->GetVisibility() != VISIBILITY_OFF)
             target->SetVisibility(VISIBILITY_ON);
     }
@@ -2966,6 +2989,8 @@ void AuraEffect::HandleAuraGhost(AuraApplication const *aurApp, uint8 mode, bool
 
 void AuraEffect::HandlePhase(AuraApplication const *aurApp, uint8 mode, bool apply) const
 {
+    // MiscValue is PhaseMask
+    // MiscValueB is PhaseID (from Phase.dbc)
     if (!(mode & AURA_EFFECT_HANDLE_REAL))
         return;
 
@@ -2995,9 +3020,9 @@ void AuraEffect::HandlePhase(AuraApplication const *aurApp, uint8 mode, bool app
         }
 
         if (apply)
-            target->ToPlayer()->GetSession()->SendSetPhaseShift(GetMiscValue());
+            target->ToPlayer()->GetSession()->SendSetPhaseShift(GetMiscValueB());
         else
-            target->ToPlayer()->GetSession()->SendSetPhaseShift(PHASEMASK_NORMAL);
+            target->ToPlayer()->GetSession()->SendSetPhaseShift(0);
     }
     else if (apply)
         target->SetPhaseMask(GetMiscValue(), false);

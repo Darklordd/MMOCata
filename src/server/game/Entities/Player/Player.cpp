@@ -2456,6 +2456,8 @@ void Player::ResetAllPowers()
         case POWER_RUNIC_POWER:
             SetPower(POWER_RUNIC_POWER, 0);
             break;
+        default:
+            break;
     }
 }
 
@@ -5785,6 +5787,8 @@ void Player::UpdateRating(CombatRating cr)
             if (affectStats)
                 UpdateArmorPenetration(amount);
             break;
+        default:
+            break;
     }
 }
 
@@ -7722,8 +7726,7 @@ void Player::_ApplyItemBonuses(ItemPrototype const *proto, uint8 slot, bool appl
         HandleStatModifier(UNIT_MOD_ARMOR, TOTAL_VALUE, float(proto->ArmorDamageModifier), apply);
 
     WeaponAttackType attType = BASE_ATTACK;
-    float damage = 0.0f;
-
+    
     if (slot == EQUIPMENT_SLOT_RANGED && (
         proto->InventoryType == INVTYPE_RANGED || proto->InventoryType == INVTYPE_THROWN ||
         proto->InventoryType == INVTYPE_RANGEDRIGHT))
@@ -10907,8 +10910,8 @@ void Player::ModifyCurrency(uint32 id, int32 count)
 	const CurrencyTypesEntry* currency = sCurrencyTypesStore.LookupEntry(id);
 	ASSERT(currency);
 
-	uint32 oldTotalCount = 0;
-	uint32 oldWeekCount = 0;
+	int32 oldTotalCount = 0;
+	int32 oldWeekCount = 0;
 	PlayerCurrenciesMap::iterator itr = m_currencies.find(id);
 	if (itr == m_currencies.end())
 	{
@@ -10950,7 +10953,7 @@ void Player::ModifyCurrency(uint32 id, int32 count)
 	}
 
 	// if we change total, we must change week
-	ASSERT(((newTotalCount-oldTotalCount) != 0) == ((newWeekCount-oldWeekCount) != 0));
+	//ASSERT(((newTotalCount-oldTotalCount) != 0) == ((newWeekCount-oldWeekCount) != 0));
 
 	if (newTotalCount != oldTotalCount)
 	{
@@ -16450,7 +16453,7 @@ bool Player::_LoadFromDB(uint32 guid, SQLQueryHolder * holder, PreparedQueryResu
     
     Field* fields = result->Fetch();
 
-    uint32 dbAccountId = fields[1].GetUInt32();
+    //uint32 dbAccountId = fields[1].GetUInt32();
 
     // check if the character's account in the db and the logged in account match.
     // player should be able to load/delete character only with correct account!
@@ -21970,7 +21973,8 @@ void Player::learnSkillRewardedSpells(uint32 skill_id, uint32 skill_value)
 
 void Player::SendAurasForTarget(Unit *target)
 {
-    if (!target || target->GetVisibleAuras()->empty())                  // speedup things
+    // Client requires this packet on login to initialize so we can't skip it for self
+    if (!target || (target->GetVisibleAuras()->empty() && target != this ))                  // speedup things
         return;
 
     WorldPacket data(SMSG_AURA_UPDATE_ALL);
