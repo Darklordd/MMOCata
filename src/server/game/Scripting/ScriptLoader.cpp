@@ -25,6 +25,9 @@
 #include "ScriptLoader.h"
 
 
+//TeleNPC2
+void AddSC_npc_teleport();
+
 //examples
 void AddSC_example_creature();
 void AddSC_example_escort();
@@ -1137,6 +1140,8 @@ void AddCustomScripts()
 {
 #ifdef SCRIPTS
     /* This is where custom scripts should be added. */
+  //TeleNPC2
+  AddSC_npc_teleport();	
 
 #endif
 }

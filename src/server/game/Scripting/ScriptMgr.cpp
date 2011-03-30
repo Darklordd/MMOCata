@@ -31,7 +31,7 @@
 #include "ScriptLoader.h"
 #include "ScriptSystem.h"
 #include "Transport.h"
-
+#include "sc_npc_teleport.h"
 // Utility macros to refer to the script registry.
 #define SCR_REG_MAP(T) ScriptRegistry<T>::ScriptMap
 #define SCR_REG_ITR(T) ScriptRegistry<T>::ScriptMapIterator
@@ -185,6 +185,9 @@ void ScriptMgr::Initialize()
 {
     LoadDatabase();
 
+	// Load TeleNPC2 - maybe not the best place to load it ...
+	LoadNpcTele();
+	
     sLog.outString("Loading C++ scripts");
     
     
