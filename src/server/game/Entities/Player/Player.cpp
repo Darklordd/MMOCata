@@ -2962,6 +2962,8 @@ void Player::InitStatsForLevel(bool reapplyMods)
         SetUInt32Value(index, 0);
 
     SetUInt32Value(PLAYER_FIELD_MOD_HEALING_DONE_POS,0);
+    SetFloatValue(PLAYER_FIELD_MOD_HEALING_PCT, 1.0f);
+    SetFloatValue(PLAYER_FIELD_MOD_HEALING_DONE_PCT, 1.0f);
     for (uint8 i = 0; i < 7; ++i)
     {
         SetUInt32Value(PLAYER_FIELD_MOD_DAMAGE_DONE_NEG+i, 0);
@@ -10993,14 +10995,14 @@ uint32 Player::_GetCurrencyWeekCap(const CurrencyTypesEntry* currency) const
 		}
 	case CURRENCY_TYPE_HONOR_POINTS:
 		{
-			uint32 honorcap = sWorld.getIntConfig(CONFIG_MAX_HONOR_POINTS);
+			uint32 honorcap = sWorld.getIntConfig(CONFIG_MAX_HONOR_POINTS) * PLAYER_CURRENCY_PRECISION;
 			if (honorcap > 0)
 				cap = honorcap;
 			break;
 		}
 	case CURRENCY_TYPE_JUSTICE_POINTS:
 		{
-			uint32 justicecap = sWorld.getIntConfig(CONFIG_MAX_JUSTICE_POINTS);
+			uint32 justicecap = sWorld.getIntConfig(CONFIG_MAX_JUSTICE_POINTS) * PLAYER_CURRENCY_PRECISION;
 			if (justicecap > 0)
 				cap = justicecap;
 			break;
@@ -18434,6 +18436,7 @@ void Player::SaveToDB()
     _SaveEquipmentSets(trans);
     GetSession()->SaveTutorialsData(trans);                 // changed only while character in game
     _SaveGlyphs(trans);
+    _SaveCurrency();
 
     // check if stats should only be saved on logout
     // save stats can be out of transaction
@@ -19631,7 +19634,8 @@ bool Player::IsAffectedBySpellmod(SpellEntry const *spellInfo, SpellModifier *mo
 void Player::AddSpellMod(SpellModifier* mod, bool apply)
 {
     sLog.outDebug("Player::AddSpellMod %d", mod->spellId);
-    uint32 Opcode = (mod->type == SPELLMOD_FLAT) ? SMSG_SET_FLAT_SPELL_MODIFIER : SMSG_SET_PCT_SPELL_MODIFIER;
+    bool isFlat = mod->type == SPELLMOD_FLAT;
+    uint32 Opcode = (isFlat) ? SMSG_SET_FLAT_SPELL_MODIFIER : SMSG_SET_PCT_SPELL_MODIFIER;
     
     WorldPacket data(Opcode);
     data << uint32(1); //number of spell mod to add
@@ -19657,7 +19661,10 @@ void Player::AddSpellMod(SpellModifier* mod, bool apply)
             }
             val += apply ? mod->value : -(mod->value);
             data << uint8(eff);
-            data << int32(val);
+            if(isFlat)
+                data << int32(val);
+            else
+                data << float(val);
             count2++;
         }
     }
