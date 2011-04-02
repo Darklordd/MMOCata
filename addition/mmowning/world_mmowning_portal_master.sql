@@ -89,6 +89,7 @@ INSERT INTO `custom_npc_tele_category` VALUES ('5', '4. Instanzen 70-80 (Kosten 
 INSERT INTO `custom_npc_tele_category` VALUES ('6', '5. Raids (Kosten 80G)', '0', '0', '0');
 INSERT INTO `custom_npc_tele_category` VALUES ('7', '6. Areana (Kosten 50G)', '0', '0', '0');
 INSERT INTO `custom_npc_tele_category` VALUES ('8', '7. Shopping', '2', '3', '0');
+INSERT INTO `custom_npc_tele_category` VALUES ('9', 'Cataclysm Gebiete', '0', '0', '0');
 
 DROP TABLE IF EXISTS `custom_npc_tele_destination`;
 -- ----------------------------
@@ -322,3 +323,49 @@ INSERT INTO `custom_npc_tele_destination` VALUES ('99', '8. Beutebucht', '-14281
 INSERT INTO `custom_npc_tele_association` VALUES ('1', '99');
 INSERT INTO `custom_npc_tele_destination` VALUES ('100', '8. Beutebucht', '-14281.9', '552.564', '8.90422', '0', '1.70185', '0', '50000');
 INSERT INTO `custom_npc_tele_association` VALUES ('2', '100');
+
+
+
+
+
+INSERT INTO `custom_npc_tele_destination` VALUES ('200', 'Azhara Crater', '67.11', '17.15', '238.12', '37', '5.69152', '0', '500000');
+INSERT INTO `custom_npc_tele_association` VALUES ('9', '200');
+
+INSERT INTO `custom_npc_tele_destination` VALUES ('201', 'The Lost Isles', '2395.86', '2219.85', '4.42', '648', '5.69152', '0', '500000');
+INSERT INTO `custom_npc_tele_association` VALUES ('9', '201');
+
+INSERT INTO `custom_npc_tele_destination` VALUES ('202', 'Tol Barad', '-636.29', '853.30', '287.39', '732', '5.69152', '0', '500000');
+INSERT INTO `custom_npc_tele_association` VALUES ('9', '202');
+
+INSERT INTO `custom_npc_tele_destination` VALUES ('203', 'Gilneas', '-1302.24', '1808.04', '15.28', '654', '5.69152', '0', '500000');
+INSERT INTO `custom_npc_tele_association` VALUES ('9', '203');
+
+INSERT INTO `custom_npc_tele_destination` VALUES ('204', 'Twin Peaks', '2118.32', '320.47', '22.75', '726', '5.69152', '0', '500000');
+INSERT INTO `custom_npc_tele_association` VALUES ('9', '204');
+
+INSERT INTO `custom_npc_tele_destination` VALUES ('205', 'The Lost Isles (Phased)', '1738.74', '2059.36', '267.64', '659', '5.69152', '0', '500000');
+INSERT INTO `custom_npc_tele_association` VALUES ('9', '205');
+
+INSERT INTO `custom_npc_tele_destination` VALUES ('206', 'Town-In-A-Box', '941.95', '2313.61', '5.77', '661', '5.69152', '0', '500000');
+INSERT INTO `custom_npc_tele_association` VALUES ('9', '206');
+
+INSERT INTO `custom_npc_tele_destination` VALUES ('207', '???', '112.84', '71.32', '-23.54', '720', '5.69152', '0', '500000');
+INSERT INTO `custom_npc_tele_association` VALUES ('9', '207');
+
+INSERT INTO `custom_npc_tele_destination` VALUES ('208', 'Deepholm Dungeon', '1094', '877', '338', '725', '5.69152', '0', '500000');
+INSERT INTO `custom_npc_tele_association` VALUES ('9', '208');
+
+INSERT INTO `custom_npc_tele_destination` VALUES ('209', 'Deepholm (Zone)', '334.65', '155.76', '49.24', '646', '5.69152', '0', '500000');
+INSERT INTO `custom_npc_tele_association` VALUES ('9', '209');
+
+INSERT INTO `custom_npc_tele_destination` VALUES ('210', 'Blackrock Caverns', '214.40', '718.86', '105.50', '645', '5.69152', '0', '500000');
+INSERT INTO `custom_npc_tele_association` VALUES ('9', '210');
+
+INSERT INTO `custom_npc_tele_destination` VALUES ('211', 'Halls of Origination', '-70.62', '366.17', '89.78', '644', '5.69152', '0', '500000');
+INSERT INTO `custom_npc_tele_association` VALUES ('9', '211');
+
+INSERT INTO `custom_npc_tele_destination` VALUES ('212', 'Abyssal Halls', '-589.89', '809.07', '245.33', '643', '5.69152', '0', '500000');
+INSERT INTO `custom_npc_tele_association` VALUES ('9', '212');
+
+INSERT INTO `custom_npc_tele_destination` VALUES ('213', 'Vashjr', '-4947.30', '3989.20', '280', '0', '5.69152', '0', '500000');
+INSERT INTO `custom_npc_tele_association` VALUES ('9', '213');
