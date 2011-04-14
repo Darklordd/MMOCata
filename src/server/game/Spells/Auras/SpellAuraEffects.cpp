@@ -2547,10 +2547,15 @@ void AuraEffect::TriggerSpell(Unit *target, Unit *caster) const
     {
         Unit *triggerCaster = GetTriggeredSpellCaster(triggeredSpellInfo, caster, triggerTarget);
         triggerCaster->CastSpell(triggerTarget, triggeredSpellInfo, true, 0, this);
-        sLog.outDebug("AuraEffect::TriggerSpell: Spell %u Trigger %u",GetId(), triggeredSpellInfo->Id);
+        sLog.outDebug("AuraEffect::TriggerSpell: Spell %u Trigger %u", GetId(), triggeredSpellInfo->Id);
     }
-    else if (target->GetTypeId() != TYPEID_UNIT || !sScriptMgr.OnDummyEffect(caster, GetId(), SpellEffIndex(GetEffIndex()), triggerTarget->ToCreature()))
-        sLog.outError("AuraEffect::TriggerSpell: Spell %u have 0 in EffectTriggered[%d], not handled custom case?",GetId(),GetEffIndex());
+    else
+    {
+        Creature* c = triggerTarget->ToCreature();
+        if (!c || (c && !sScriptMgr.OnDummyEffect(caster, GetId(), SpellEffIndex(GetEffIndex()), triggerTarget->ToCreature())) ||
+            (c && !c->AI()->sOnDummyEffect(caster, GetId(), SpellEffIndex(GetEffIndex()))))
+            sLog.outError("AuraEffect::TriggerSpell: Spell %u has value 0 in EffectTriggered[%d] and is therefor not handled. Define as custom case?",GetId(),GetEffIndex());
+    }
 }
 
 void AuraEffect::TriggerSpellWithValue(Unit *target, Unit *caster) const
@@ -4685,7 +4690,7 @@ void AuraEffect::HandleAuraModResistanceExclusive(AuraApplication const *aurApp,
 
     Unit *target = aurApp->GetTarget();
 
-    uint32 modAmount = GetAmount();
+    int32 modAmount = GetAmount();
 
     for (int8 x = SPELL_SCHOOL_NORMAL; x < MAX_SPELL_SCHOOL; x++)
     {
