@@ -314,7 +314,7 @@ class WorldSession
         }
         void ResetTimeOutTime()
         {
-            m_timeOutTime = sWorld.getIntConfig(CONFIG_SOCKET_TIMEOUTTIME);
+            m_timeOutTime = sWorld->getIntConfig(CONFIG_SOCKET_TIMEOUTTIME);
         }
         bool IsConnectionIdle() const
         {
@@ -830,6 +830,7 @@ class WorldSession
         void HandleQuestPOIQuery(WorldPacket& recv_data);
         void HandleEjectPasenger(WorldPacket &data);
         void HandleEnterPlayerVehicle(WorldPacket &data);
+        void HandleUpdateProjectilePosition(WorldPacket& recvPacket);
 
     private:
         void ProcessQueryCallbacks();
