@@ -24,7 +24,6 @@
 #include "ScriptPCH.h"
 #include "ScriptLoader.h"
 
-
 //TeleNPC2
 void AddSC_npc_teleport();
 
@@ -33,6 +32,7 @@ void AddSC_example_creature();
 void AddSC_example_escort();
 void AddSC_example_gossip_codebox();
 void AddSC_example_misc();
+void AddSC_example_commandscript();
 
 // spells
 void AddSC_deathknight_spell_scripts();
@@ -51,6 +51,16 @@ void AddSC_item_spell_scripts();
 void AddSC_example_spell_scripts();
 
 void AddSC_SmartSCripts();
+
+//Commands
+void AddSC_account_commandscript();
+//void AddSC_achievement_commandscript();
+//void AddSC_gm_commandscript();
+//void AddSC_npc_commandscript();
+//void AddSC_go_commandscript();
+//void AddSC_learn_commandscript();
+//void AddSC_modify_commandscript();
+void AddSC_debug_commandscript();
 
 #ifdef SCRIPTS
 //world
@@ -565,6 +575,7 @@ void AddScripts()
     AddExampleScripts();
     AddSpellScripts();
     AddSC_SmartSCripts();
+    AddCommandScripts();
 #ifdef SCRIPTS
     AddWorldScripts();
     AddEasternKingdomsScripts();
@@ -583,6 +594,7 @@ void AddExampleScripts()
     AddSC_example_escort();
     AddSC_example_gossip_codebox();
     AddSC_example_misc();
+    AddSC_example_commandscript();
 }
 
 void AddSpellScripts()
@@ -601,6 +613,18 @@ void AddSpellScripts()
     AddSC_quest_spell_scripts();
     AddSC_item_spell_scripts();
     AddSC_example_spell_scripts();
+}
+
+void AddCommandScripts()
+{
+    AddSC_account_commandscript();
+    //AddSC_achievement_commandscript();
+    //AddSC_gm_commandscript();
+    //AddSC_npc_commandscript();
+    //AddSC_go_commandscript();
+    //AddSC_learn_commandscript();
+    //AddSC_modify_commandscript();
+    AddSC_debug_commandscript();
 }
 
 void AddWorldScripts()

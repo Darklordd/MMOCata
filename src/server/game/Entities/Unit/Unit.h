@@ -551,16 +551,6 @@ enum DamageEffectType
     SELF_DAMAGE             = 5
 };
 
-enum UnitVisibility
-{
-    VISIBILITY_OFF                = 0,                      // absolute, not detectable, GM-like, can see all other
-    VISIBILITY_ON                 = 1,
-    VISIBILITY_GROUP_STEALTH      = 2,                      // detect chance, seen and can see group members
-    //VISIBILITY_GROUP_INVISIBILITY = 3,                      // invisibility, can see and can be seen only another invisible unit or invisible detection unit, set only if not stealthed, and in checks not used (mask used instead)
-    //VISIBILITY_GROUP_NO_DETECT    = 4,                      // state just at stealth apply for update Grid state. Don't remove, otherwise stealth spells will break
-    VISIBILITY_RESPAWN            = 5                       // special totally not detectable visibility for force delete object at respawn command
-};
-
 // Value masks for UNIT_FIELD_FLAGS
 enum UnitFlags
 {
@@ -697,7 +687,7 @@ enum MovementFlags2
     MOVEMENTFLAG2_NONE                     = 0x00000000,
     MOVEMENTFLAG2_NO_STRAFE                = 0x00000001,
     MOVEMENTFLAG2_NO_JUMPING               = 0x00000002,
-    MOVEMENTFLAG2_UNK3                     = 0x00000004,
+    MOVEMENTFLAG2_UNK3                     = 0x00000004,        // Overrides various clientside checks
     MOVEMENTFLAG2_FULL_SPEED_TURNING       = 0x00000008,
     MOVEMENTFLAG2_FULL_SPEED_PITCHING      = 0x00000010,
     MOVEMENTFLAG2_ALWAYS_ALLOW_PITCHING    = 0x00000020,
@@ -1056,9 +1046,6 @@ struct CharmInfo
         void SetCommandState(CommandStates st) { m_CommandState = st; }
         CommandStates GetCommandState() const { return m_CommandState; }
         bool HasCommandState(CommandStates state) const { return (m_CommandState == state); }
-        //void SetReactState(ReactStates st) { m_reactState = st; }
-        //ReactStates GetReactState() { return m_reactState; }
-        //bool HasReactState(ReactStates state) { return (m_reactState == state); }
 
         void InitPossessCreateSpells();
         void InitCharmCreateSpells();
@@ -1098,7 +1085,6 @@ struct CharmInfo
         UnitActionBarEntry PetActionBar[MAX_UNIT_ACTION_BAR_INDEX];
         CharmSpellEntry m_charmspells[4];
         CommandStates   m_CommandState;
-        //ReactStates     m_reactState;
         uint32          m_petnumber;
         bool            m_barInit;
 
@@ -1142,7 +1128,7 @@ enum PlayerTotemType
 
 // delay time next attack to prevent client attack animation problems
 #define ATTACK_DISPLAY_DELAY 200
-#define MAX_PLAYER_STEALTH_DETECT_RANGE 45.0f               // max distance for detection targets by player
+#define MAX_PLAYER_STEALTH_DETECT_RANGE 30.0f               // max distance for detection targets by player
 
 struct SpellProcEventEntry;                                 // used only privately
 
@@ -1255,7 +1241,7 @@ class Unit : public WorldObject
         bool IsVehicle() const  { return m_unitTypeMask & UNIT_MASK_VEHICLE; }
 
         uint8 getLevel() const { return uint8(GetUInt32Value(UNIT_FIELD_LEVEL)); }
-        virtual uint8 getLevelForTarget(Unit const* /*target*/) const { return getLevel(); }
+        uint8 getLevelForTarget(WorldObject const* /*target*/) const { return getLevel(); }
         void SetLevel(uint8 lvl);
         uint8 getRace() const { return GetByteValue(UNIT_FIELD_BYTES_0, 0); }
         uint32 getRaceMask() const { return 1 << (getRace()-1); }
@@ -1687,6 +1673,7 @@ class Unit : public WorldObject
         uint32 GetAuraCount(uint32 spellId) const;
         bool HasAura(uint32 spellId, uint64 casterGUID = 0, uint64 itemCasterGUID = 0, uint8 reqEffMask = 0) const;
         bool HasAuraType(AuraType auraType) const;
+        bool HasAuraTypeWithCaster(AuraType auratype, uint64 caster) const;
         bool HasAuraTypeWithMiscvalue(AuraType auratype, int32 miscvalue) const;
         bool HasAuraTypeWithAffectMask(AuraType auratype, SpellEntry const * affectedSpell) const;
         bool HasAuraTypeWithValue(AuraType auratype, int32 value) const;
@@ -1766,8 +1753,6 @@ class Unit : public WorldObject
         uint32 m_addDmgOnce;
         uint64 m_SummonSlot[MAX_SUMMON_SLOT];
         uint64 m_ObjectSlot[4];
-        uint32 m_detectInvisibilityMask;
-        uint32 m_invisibilityMask;
 
         ShapeshiftForm GetShapeshiftForm() const { return ShapeshiftForm(GetByteValue(UNIT_FIELD_BYTES_2, 3)); }
         void SetShapeshiftForm(ShapeshiftForm form) { SetByteValue(UNIT_FIELD_BYTES_2, 3, form); }
@@ -1829,23 +1814,17 @@ class Unit : public WorldObject
         void SetFacingToObject(WorldObject* pObject);
 
         // Visibility system
-        UnitVisibility GetVisibility() const { return m_Visibility; }
-        void SetVisibility(UnitVisibility x);
+        bool IsVisible() const { return (m_serverSideVisibility.GetValue(SERVERSIDE_VISIBILITY_GM) > SEC_PLAYER) ? false : true; }
+        void SetVisible(bool x);
 
         // common function for visibility checks for player/creatures with detection code
-        virtual bool canSeeOrDetect(Unit const* u, bool detect, bool inVisibleList = false, bool is3dDistance = true) const = 0;
-        bool isVisibleForOrDetect(Unit const* u, bool detect, bool inVisibleList = false, bool is3dDistance = true) const;
-        bool canDetectInvisibilityOf(Unit const* u) const;
-        bool canDetectStealthOf(Unit const* u, float distance) const;
+        bool isValid() const { return WorldObject::isValid(); }
+
         void SetPhaseMask(uint32 newPhaseMask, bool update);// overwrite WorldObject::SetPhaseMask
         void UpdateObjectVisibility(bool forced = true);
 
-        // virtual functions for all world objects types
-        bool isVisibleForInState(Player const* u, bool inVisibleList) const;
-        // function for low level grid visibility checks in player/creature cases
-        virtual bool IsVisibleInGridForPlayer(Player const* pl) const = 0;
-
         SpellImmuneList m_spellImmune[MAX_SPELL_IMMUNITY];
+        uint32 m_lastSanctuaryTime;
 
         // Threat related methods
         bool CanHaveThreatList() const;
@@ -1970,6 +1949,12 @@ class Unit : public WorldObject
         uint32 HasUnitMovementFlag(uint32 f) const { return m_movementInfo.flags & f; }
         uint32 GetUnitMovementFlags() const { return m_movementInfo.flags; }
         void SetUnitMovementFlags(uint32 f) { m_movementInfo.flags = f; }
+
+        void AddExtraUnitMovementFlag(uint16 f) { m_movementInfo.flags2 |= f; }
+        void RemoveExtraUnitMovementFlag(uint16 f) { m_movementInfo.flags2 &= ~f; }
+        uint16 HasExtraUnitMovementFlag(uint16 f) const { return m_movementInfo.flags2 & f; }
+        uint16 GetExtraUnitMovementFlags() const { return m_movementInfo.flags2; }
+        void SetExtraUnitMovementFlags(uint16 f) { m_movementInfo.flags2 = f; }
 
         void SetControlled(bool apply, UnitState state);
 
@@ -2137,6 +2122,12 @@ class Unit : public WorldObject
 
         uint32 m_unitTypeMask;
 
+        bool isAlwaysVisibleFor(WorldObject const* seer) const;
+        bool canSeeAlways(WorldObject const* obj) const { return WorldObject::canSeeAlways(obj); }
+
+        bool isVisibleForInState(WorldObject const* seer) const { return WorldObject::isVisibleForInState(seer); };
+
+        bool isAlwaysDetectableFor(WorldObject const* seer) const;
     private:
         bool IsTriggeredAtSpellProcEvent(Unit *pVictim, Aura * aura, SpellEntry const * procSpell, uint32 procFlag, uint32 procExtra, WeaponAttackType attType, bool isVictim, bool active, SpellProcEventEntry const *& spellProcEvent);
         bool HandleDummyAuraProc(Unit *pVictim, uint32 damage, AuraEffect* triggeredByAura, SpellEntry const *procSpell, uint32 procFlag, uint32 procEx, uint32 cooldown);
@@ -2166,8 +2157,6 @@ class Unit : public WorldObject
         uint32 m_lastManaUse;                               // msecs
 
         Spell* m_currentSpells[CURRENT_MAX_SPELL];
-
-        UnitVisibility m_Visibility;
 
         Diminishing m_Diminishing;
         // Manage all Units threatening us

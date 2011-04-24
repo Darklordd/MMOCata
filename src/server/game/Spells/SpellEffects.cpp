@@ -1235,6 +1235,34 @@ void Spell::EffectDummy(SpellEffIndex effIndex)
             if (m_spellInfo->SpellFamilyFlags[2] & 0x20)
                 m_caster->CastSpell(m_caster,51755,true);
             break;
+        case SPELLFAMILY_MAGE:
+        {
+            switch (m_spellInfo->Id)
+            {
+                case 1459: // Arcane Brilliance
+                {
+                    if (m_caster->GetTypeId() == TYPEID_PLAYER)
+                    {
+                        std::list<Unit*> PartyMembers;
+                        m_caster->GetPartyMembers(PartyMembers);
+                        bool Continue = false;
+                        uint32 player = 0;
+                        for (std::list<Unit*>::iterator itr = PartyMembers.begin(); itr != PartyMembers.end(); ++itr) // If caster is in party with a player
+                        {
+                            ++player;
+                            if (Continue == false && player > 1)
+                                Continue = true;
+                        }
+                        if (Continue == true)
+                            m_caster->CastSpell(unitTarget, 79058, true); // Arcane Brilliance (For all)
+                        else
+                            m_caster->CastSpell(unitTarget, 79057, true); // Arcane Brilliance (Only for caster)
+                    }
+                    break;
+                }
+            }
+            break;
+        }
         case SPELLFAMILY_WARRIOR:
             // Charge
             if (m_spellInfo->SpellFamilyFlags & SPELLFAMILYFLAG_WARRIOR_CHARGE && m_spellInfo->SpellVisual[0] == 867)
@@ -5522,27 +5550,19 @@ void Spell::EffectSanctuary(SpellEffIndex /*effIndex*/)
     if (!unitTarget)
         return;
 
-    std::list<Unit*> targets;
-    Trinity::AnyUnfriendlyUnitInObjectRangeCheck u_check(unitTarget, unitTarget, m_caster->GetMap()->GetVisibilityDistance());
-    Trinity::UnitListSearcher<Trinity::AnyUnfriendlyUnitInObjectRangeCheck> searcher(unitTarget, targets, u_check);
-    unitTarget->VisitNearbyObject(m_caster->GetMap()->GetVisibilityDistance(), searcher);
-    for (std::list<Unit*>::iterator iter = targets.begin(); iter != targets.end(); ++iter)
-    {
-        if (!(*iter)->hasUnitState(UNIT_STAT_CASTING))
-            continue;
+    unitTarget->getHostileRefManager().UpdateVisibility();
 
-        for (uint32 i = CURRENT_FIRST_NON_MELEE_SPELL; i < CURRENT_MAX_SPELL; i++)
-        {
-            if ((*iter)->GetCurrentSpell(i)
-            && (*iter)->GetCurrentSpell(i)->m_targets.getUnitTargetGUID() == unitTarget->GetGUID())
-            {
-                (*iter)->InterruptSpell(CurrentSpellTypes(i), false);
-            }
-        }
+    Unit::AttackerSet const& attackers = unitTarget->getAttackers();
+    for (Unit::AttackerSet::const_iterator itr = attackers.begin(); itr != attackers.end();)
+    {
+        if (!(*itr)->canSeeOrDetect(unitTarget))
+            (*(itr++))->AttackStop();
+        else
+            ++itr;
     }
 
-    unitTarget->CombatStop();
-    unitTarget->getHostileRefManager().deleteReferences();   // stop all fighting
+    unitTarget->m_lastSanctuaryTime = getMSTime();
+
     // Vanish allows to remove all threat and cast regular stealth so other spells can be used
     if (m_caster->GetTypeId() == TYPEID_PLAYER
         && m_spellInfo->SpellFamilyName == SPELLFAMILY_ROGUE

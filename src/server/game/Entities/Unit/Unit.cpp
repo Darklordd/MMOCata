@@ -105,7 +105,7 @@ Unit::Unit(): WorldObject(),
 m_movedPlayer(NULL), IsAIEnabled(false), NeedChangeAI(false),
 m_ControlledByPlayer(false), i_AI(NULL), i_disabledAI(NULL), m_procDeep(0),
 m_removedAurasCount(0), i_motionMaster(this), m_ThreatManager(this), m_vehicle(NULL),
-m_vehicleKit(NULL), m_unitTypeMask(UNIT_MASK_NONE), m_HostileRefManager(this)
+m_vehicleKit(NULL), m_unitTypeMask(UNIT_MASK_NONE), m_HostileRefManager(this), m_lastSanctuaryTime(0)
 {
 #ifdef _MSC_VER
 #pragma warning(default:4355)
@@ -141,11 +141,8 @@ m_vehicleKit(NULL), m_unitTypeMask(UNIT_MASK_NONE), m_HostileRefManager(this)
     m_ObjectSlot[0] = m_ObjectSlot[1] = m_ObjectSlot[2] = m_ObjectSlot[3] = 0;
 
     m_auraUpdateIterator = m_ownedAuras.end();
-    m_Visibility = VISIBILITY_ON;
 
     m_interruptMask = 0;
-    m_detectInvisibilityMask = 0;
-    m_invisibilityMask = 0;
     m_transform = 0;
     m_canModifyStats = false;
 
@@ -196,6 +193,8 @@ m_vehicleKit(NULL), m_unitTypeMask(UNIT_MASK_NONE), m_HostileRefManager(this)
 
     m_cleanupDone = false;
     m_duringRemoveFromWorld = false;
+
+    m_serverSideVisibility.SetValue(SERVERSIDE_VISIBILITY_GHOST, GHOST_VISIBILITY_ALIVE);
 }
 
 Unit::~Unit()
@@ -423,23 +422,24 @@ void Unit::SendMonsterMove(float NewPosX, float NewPosY, float NewPosZ, uint32 M
 
 void Unit::SendMonsterMoveTransport(Unit *vehicleOwner)
 {
+    // TODO: Turn into BuildMonsterMoveTransport packet and allow certain variables (for npc movement aboard vehicles)
     WorldPacket data(SMSG_MONSTER_MOVE_TRANSPORT, GetPackGUID().size()+vehicleOwner->GetPackGUID().size());
     data.append(GetPackGUID());
     data.append(vehicleOwner->GetPackGUID());
     data << int8(GetTransSeat());
-    data << uint8(0);
+    data << uint8(0);   // unk boolean
     data << GetPositionX() - vehicleOwner->GetPositionX();
     data << GetPositionY() - vehicleOwner->GetPositionY();
     data << GetPositionZ() - vehicleOwner->GetPositionZ();
-    data << uint32(getMSTime());
-    data << uint8(4); // type
-    data << GetTransOffsetO();
+    data << uint32(100);                    // should be an increasing constant that indicates movement packet count
+    data << uint8(SPLINETYPE_FACING_ANGLE); 
+    data << GetTransOffsetO();              // facing angle?
     data << uint32(SPLINEFLAG_TRANSPORT);
-    data << uint32(0);// move time
-    data << uint32(1);// WP count
-    data << float(0);//GetTransOffsetX();
-    data << float(0);//GetTransOffsetY();
-    data << float(0);//GetTransOffsetZ();
+    data << uint32(0);                      // move time
+    data << uint32(1);
+    data << uint32(GetTransOffsetX());
+    data << uint32(GetTransOffsetY());
+    data << uint32(GetTransOffsetZ());
     SendMessageToSet(&data, true);
 }
 
@@ -4200,6 +4200,15 @@ bool Unit::HasAuraType(AuraType auraType) const
     return (!m_modAuras[auraType].empty());
 }
 
+bool Unit::HasAuraTypeWithCaster(AuraType auratype, uint64 caster) const
+{
+    AuraEffectList const& mTotalAuraList = GetAuraEffectsByType(auratype);
+    for (AuraEffectList::const_iterator i = mTotalAuraList.begin(); i != mTotalAuraList.end(); ++i)
+        if (caster == (*i)->GetCasterGUID())
+            return true;
+    return false;
+}
+
 bool Unit::HasAuraTypeWithMiscvalue(AuraType auratype, int32 miscvalue) const
 {
     AuraEffectList const& mTotalAuraList = GetAuraEffectsByType(auratype);
@@ -5206,7 +5215,7 @@ bool Unit::HandleDummyAuraProc(Unit *pVictim, uint32 damage, AuraEffect* trigger
 
                     target = this;
                     if (roll_chance_i(10))
-                        this->ToPlayer()->Say("This is Madness!", LANG_UNIVERSAL);
+                        this->ToPlayer()->Say("This is Madness!", LANG_UNIVERSAL); // TODO: It should be moved to database, shouldn't it?
                     break;
                 }
                 // Sunwell Exalted Caster Neck (??? neck)
@@ -11892,14 +11901,6 @@ bool Unit::canAttack(Unit const* target, bool force) const
     if (!target->isAttackableByAOE() || target->hasUnitState(UNIT_STAT_DIED))
         return false;
 
-    // shaman totem quests: spell 8898, shaman can detect elementals but elementals cannot see shaman
-    if (m_invisibilityMask || target->m_invisibilityMask)
-        if (!canDetectInvisibilityOf(target) && !target->canDetectInvisibilityOf(this))
-            return false;
-
-    if (target->GetVisibility() == VISIBILITY_GROUP_STEALTH && !canDetectStealthOf(target, GetDistance(target)))
-        return false;
-
     if (m_vehicle)
         if (IsOnVehicle(target) || m_vehicle->GetBase()->IsOnVehicle(target))
             return false;
@@ -12011,98 +12012,36 @@ int32 Unit::ModifyPower(Powers power, int32 dVal)
     return gain;
 }
 
-bool Unit::isVisibleForOrDetect(Unit const* u, bool detect, bool inVisibleList, bool is3dDistance) const
+bool Unit::isAlwaysVisibleFor(WorldObject const* seer) const
 {
-    if (!u || !IsInMap(u))
-        return false;
-
-    return u->canSeeOrDetect(this, detect, inVisibleList, is3dDistance);
-}
-
-bool Unit::canSeeOrDetect(Unit const* /*u*/, bool /*detect*/, bool /*inVisibleList*/, bool /*is3dDistance*/) const
-{
-    return true;
-}
-
-bool Unit::canDetectInvisibilityOf(Unit const* u) const
-{
-    if (m_invisibilityMask & u->m_invisibilityMask) // same group
+    if (WorldObject::isAlwaysVisibleFor(seer))
         return true;
-    AuraEffectList const& auras = u->GetAuraEffectsByType(SPELL_AURA_MOD_STALKED); // Hunter mark
-    for (AuraEffectList::const_iterator iter = auras.begin(); iter != auras.end(); ++iter)
-        if ((*iter)->GetCasterGUID() == GetGUID())
+
+    // Always seen by owner
+    if (uint64 guid = GetCharmerOrOwnerGUID())
+        if (seer->GetGUID() == guid)
             return true;
-
-    if (uint32 mask = (m_detectInvisibilityMask & u->m_invisibilityMask))
-    {
-        for (uint8 i = 0; i < 10; ++i)
-        {
-            if (((1 << i) & mask) == 0)
-                continue;
-
-            // find invisibility level
-            uint32 invLevel = 0;
-            Unit::AuraEffectList const& iAuras = u->GetAuraEffectsByType(SPELL_AURA_MOD_INVISIBILITY);
-            for (Unit::AuraEffectList::const_iterator itr = iAuras.begin(); itr != iAuras.end(); ++itr)
-                if (uint8((*itr)->GetMiscValue()) == i && int32(invLevel) < (*itr)->GetAmount())
-                    invLevel = (*itr)->GetAmount();
-
-            // find invisibility detect level
-            uint32 detectLevel = 0;
-            if (i == 6 && GetTypeId() == TYPEID_PLAYER)          // special drunk detection case
-            {
-                detectLevel = this->ToPlayer()->GetDrunkValue();
-            }
-            else
-            {
-                Unit::AuraEffectList const& dAuras = GetAuraEffectsByType(SPELL_AURA_MOD_INVISIBILITY_DETECTION);
-                for (Unit::AuraEffectList::const_iterator itr = dAuras.begin(); itr != dAuras.end(); ++itr)
-                    if (uint8((*itr)->GetMiscValue()) == i && int32(detectLevel) < (*itr)->GetAmount())
-                        detectLevel = (*itr)->GetAmount();
-            }
-
-            if (invLevel <= detectLevel)
-                return true;
-        }
-    }
 
     return false;
 }
 
-bool Unit::canDetectStealthOf(Unit const* target, float distance) const
+bool Unit::isAlwaysDetectableFor(WorldObject const* seer) const
 {
-    if (hasUnitState(UNIT_STAT_STUNNED))
-        return false;
-    if (distance < 0.24f) //collision
-        return true;
-    if (!HasInArc(M_PI, target)) //behind
-        return false;
-    if (HasAuraType(SPELL_AURA_DETECT_STEALTH))
+    if (WorldObject::isAlwaysDetectableFor(seer))
         return true;
 
-    AuraEffectList const &auras = target->GetAuraEffectsByType(SPELL_AURA_MOD_STALKED); // Hunter mark
-    for (AuraEffectList::const_iterator iter = auras.begin(); iter != auras.end(); ++iter)
-        if ((*iter)->GetCasterGUID() == GetGUID())
-            return true;
+    if (HasAuraTypeWithCaster(SPELL_AURA_MOD_STALKED, seer->GetGUID()))
+        return true;
 
-    //Visible distance based on stealth value (stealth rank 4 300MOD, 10.5 - 3 = 7.5)
-    float visibleDistance = 7.5f;
-    //Visible distance is modified by -Level Diff (every level diff = 1.0f in visible distance)
-    visibleDistance += float(getLevelForTarget(target)) - target->GetTotalAuraModifier(SPELL_AURA_MOD_STEALTH)/5.0f;
-    //-Stealth Mod(positive like Master of Deception) and Stealth Detection(negative like paranoia)
-    //based on wowwiki every 5 mod we have 1 more level diff in calculation
-    visibleDistance += (float)(GetTotalAuraModifier(SPELL_AURA_MOD_DETECT) - target->GetTotalAuraModifier(SPELL_AURA_MOD_STEALTH_LEVEL)) / 5.0f;
-    visibleDistance = visibleDistance > MAX_PLAYER_STEALTH_DETECT_RANGE ? MAX_PLAYER_STEALTH_DETECT_RANGE : visibleDistance;
-
-    return distance < visibleDistance;
+    return false;
 }
 
-void Unit::SetVisibility(UnitVisibility x)
+void Unit::SetVisible(bool x)
 {
-    m_Visibility = x;
-
-    if (m_Visibility == VISIBILITY_GROUP_STEALTH)
-        DestroyForNearbyPlayers();
+    if (!x)
+        m_serverSideVisibility.SetValue(SERVERSIDE_VISIBILITY_GM, SEC_GAMEMASTER);
+    else
+        m_serverSideVisibility.SetValue(SERVERSIDE_VISIBILITY_GM, SEC_PLAYER);
 
     UpdateObjectVisibility();
 }
@@ -12637,15 +12576,17 @@ Unit* Creature::SelectVictim()
                 return target;
     }
 
-    if (m_invisibilityMask)
+    Unit::AuraEffectList const& iAuras = GetAuraEffectsByType(SPELL_AURA_MOD_INVISIBILITY);
+    if(!iAuras.empty())
     {
-        Unit::AuraEffectList const& iAuras = GetAuraEffectsByType(SPELL_AURA_MOD_INVISIBILITY);
         for (Unit::AuraEffectList::const_iterator itr = iAuras.begin(); itr != iAuras.end(); ++itr)
+        {
             if ((*itr)->GetBase()->IsPermanent())
             {
                 AI()->EnterEvadeMode();
                 break;
             }
+        }
         return NULL;
     }
 
@@ -12986,11 +12927,6 @@ Player* Unit::GetPlayer(WorldObject& object, uint64 guid)
 Creature* Unit::GetCreature(WorldObject& object, uint64 guid)
 {
     return object.GetMap()->GetCreature(guid);
-}
-
-bool Unit::isVisibleForInState(Player const* u, bool inVisibleList) const
-{
-    return u->canSeeOrDetect(this, false, inVisibleList, false);
 }
 
 uint32 Unit::GetCreatureType() const
@@ -14634,13 +14570,13 @@ void Unit::SetContestedPvP(Player *attackedPlayer)
         player->addUnitState(UNIT_STAT_ATTACK_PLAYER);
         player->SetFlag(PLAYER_FLAGS, PLAYER_FLAGS_CONTESTED_PVP);
         // call MoveInLineOfSight for nearby contested guards
-        player->SetVisibility(player->GetVisibility());
+        UpdateObjectVisibility();
     }
     if (!hasUnitState(UNIT_STAT_ATTACK_PLAYER))
     {
         addUnitState(UNIT_STAT_ATTACK_PLAYER);
         // call MoveInLineOfSight for nearby contested guards
-        SetVisibility(GetVisibility());
+        UpdateObjectVisibility();
     }
 }
 
@@ -16038,7 +15974,7 @@ void Unit::UpdateObjectVisibility(bool forced)
         WorldObject::UpdateObjectVisibility(true);
         // call MoveInLineOfSight for nearby creatures
         Trinity::AIRelocationNotifier notifier(*this);
-        VisitNearbyObject(GetMap()->GetVisibilityDistance(), notifier);
+        VisitNearbyObject(GetVisibilityRange(), notifier);
     }
 }
 
@@ -16565,16 +16501,19 @@ void Unit::EnterVehicle(Vehicle *vehicle, int8 seatId, bool byAura)
         return;
     }
 
+    if (Player* thisPlr = this->ToPlayer())
+    {
+        WorldPacket data(SMSG_ON_CANCEL_EXPECTED_RIDE_VEHICLE_AURA, 0);
+        thisPlr->GetSession()->SendPacket(&data);
+
+        data.Initialize(SMSG_BREAK_TARGET, 7);
+        data.append(vehicle->GetBase()->GetPackGUID());
+        thisPlr->GetSession()->SendPacket(&data);
+    }
+
     SetControlled(true, UNIT_STAT_ROOT);
     //movementInfo is set in AddPassenger
     //packets are sent in AddPassenger
-
-    if (GetTypeId() == TYPEID_PLAYER)
-    {
-        //this->ToPlayer()->SetClientControl(vehicle, 1);
-        WorldPacket data(SMSG_ON_CANCEL_EXPECTED_RIDE_VEHICLE_AURA, 0);
-        this->ToPlayer()->GetSession()->SendPacket(&data);
-    }
 }
 
 void Unit::ChangeSeat(int8 seatId, bool next, bool byAura)
@@ -16652,22 +16591,28 @@ void Unit::BuildMovementPacket(ByteBuffer *data) const
 {
     switch (GetTypeId())
     {
-    case TYPEID_UNIT:
-        if (canFly())
-            const_cast<Unit*>(this)->AddUnitMovementFlag(MOVEMENTFLAG_LEVITATING);
-        break;
-    case TYPEID_PLAYER:
-        // remove unknown, unused etc flags for now
-        const_cast<Unit*>(this)->RemoveUnitMovementFlag(MOVEMENTFLAG_SPLINE_ENABLED);
-        if (isInFlight())
-        {
-            WPAssert(const_cast<Unit*>(this)->GetMotionMaster()->GetCurrentMovementGeneratorType() == FLIGHT_MOTION_TYPE);
-            const_cast<Unit*>(this)->AddUnitMovementFlag(MOVEMENTFLAG_FORWARD | MOVEMENTFLAG_SPLINE_ENABLED);
-        }
-        break;
-    default:
-        break;
+        case TYPEID_UNIT:
+            if (canFly())
+                const_cast<Unit*>(this)->AddUnitMovementFlag(MOVEMENTFLAG_LEVITATING);
+            if (IsVehicle())
+                const_cast<Unit*>(this)->AddExtraUnitMovementFlag(GetVehicleKit()->GetExtraMovementFlagsForBase());
+            break;
+        case TYPEID_PLAYER:
+            // remove unknown, unused etc flags for now
+            const_cast<Unit*>(this)->RemoveUnitMovementFlag(MOVEMENTFLAG_SPLINE_ENABLED);
+            if (isInFlight())
+            {
+                WPAssert(const_cast<Unit*>(this)->GetMotionMaster()->GetCurrentMovementGeneratorType() == FLIGHT_MOTION_TYPE);
+                const_cast<Unit*>(this)->AddUnitMovementFlag(MOVEMENTFLAG_FORWARD | MOVEMENTFLAG_SPLINE_ENABLED);
+            }
+            break;
+        default:
+            break;
     }
+
+    if (GetVehicle())
+        if (!this->HasUnitMovementFlag(MOVEMENTFLAG_ROOT))
+            sLog->outError("Unit does not have MOVEMENTFLAG_ROOT but is in vehicle!");
 
     *data << uint32(GetUnitMovementFlags()); // movement flags
     *data << uint16(m_movementInfo.flags2); // 2.3.0
