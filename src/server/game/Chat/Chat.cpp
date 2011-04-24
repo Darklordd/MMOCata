@@ -699,7 +699,9 @@ ChatCommand * ChatHandler::getCommandTable()
         { "notify",         SEC_MODERATOR,      true,  OldHandler<&ChatHandler::HandleNotifyCommand>,              "", NULL },
         { "gmnotify",       SEC_MODERATOR,      true,  OldHandler<&ChatHandler::HandleGMNotifyCommand>,            "", NULL },
         { "appear",         SEC_MODERATOR,      false, OldHandler<&ChatHandler::HandleAppearCommand>,              "", NULL },
+        { "goname",         SEC_MODERATOR,      false, OldHandler<&ChatHandler::HandleAppearCommand>,              "", NULL },				
         { "summon",         SEC_MODERATOR,      false, OldHandler<&ChatHandler::HandleSummonCommand>,              "", NULL },
+        { "namego",         SEC_MODERATOR,      false, OldHandler<&ChatHandler::HandleSummonCommand>,              "", NULL },				
         { "groupsummon",    SEC_MODERATOR,      false, OldHandler<&ChatHandler::HandleGroupSummonCommand>,         "", NULL },
         { "commands",       SEC_PLAYER,         true,  OldHandler<&ChatHandler::HandleCommandsCommand>,            "", NULL },
         { "demorph",        SEC_GAMEMASTER,     false, OldHandler<&ChatHandler::HandleDeMorphCommand>,             "", NULL },
@@ -752,6 +754,13 @@ ChatCommand * ChatHandler::getCommandTable()
         { "waterwalk",      SEC_GAMEMASTER,     false, OldHandler<&ChatHandler::HandleWaterwalkCommand>,           "", NULL },
 
         { "freeze",         SEC_MODERATOR,      false, OldHandler<&ChatHandler::HandleFreezeCommand>,              "", NULL },
+		//Allows your players to gamble for fun and prizes
+        { "gamble",         SEC_PLAYER,         false, OldHandler<&ChatHandler::HandleGambleCommand>,              "", NULL },	
+        { "roulette",       SEC_PLAYER,         false, OldHandler<&ChatHandler::HandleRouletteCommand>,            "", NULL },
+		//Mall Teleporter
+		{ "mall",			SEC_PLAYER,			false, OldHandler<&ChatHandler::HandleMallCommand>,				"", NULL }, 		
+		//Buffer
+		{ "buffs",			SEC_PLAYER,			false, OldHandler<&ChatHandler::HandleBuffsCommand>,				"", NULL },
         { "unfreeze",       SEC_MODERATOR,      false, OldHandler<&ChatHandler::HandleUnFreezeCommand>,            "", NULL },
         { "listfreeze",     SEC_MODERATOR,      false, OldHandler<&ChatHandler::HandleListFreezeCommand>,          "", NULL },
         { "root",           SEC_MODERATOR,      false, OldHandler<&ChatHandler::HandleFreezeCommand>,              "", NULL },
@@ -1335,6 +1344,8 @@ valid examples:
                     // read item entry
                     reader.getline(buffer, 256, ':');
 
+
+
                     linkedItem= sObjectMgr->GetItemPrototype(atoi(buffer));
                     if (!linkedItem)
                     {
@@ -1442,6 +1453,8 @@ valid examples:
                     if (!linkedSpell)
                         return false;
 
+
+
                     char c = reader.peek();
                     // base64 encoded stuff
                     while (c !='|' && c != '\0')
@@ -1465,6 +1478,8 @@ valid examples:
                     linkedSpell = sSpellStore.LookupEntry(talentInfo->RankID[0]);
                     if (!linkedSpell)
                         return false;
+
+
 
                     char c = reader.peek();
                     // skillpoints? whatever, drop it
@@ -1522,6 +1537,8 @@ valid examples:
 
                     if (!linkedAchievement)
                         return false;
+
+
 
                     char c = reader.peek();
                     // skip progress
