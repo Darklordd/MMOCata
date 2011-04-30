@@ -37,7 +37,7 @@ void CreatureAI::OnCharmed(bool /*apply*/)
 }
 
 AISpellInfoType * UnitAI::AISpellInfo;
- AISpellInfoType * GetAISpellInfo(uint32 i) { return &CreatureAI::AISpellInfo[i]; }
+AISpellInfoType * GetAISpellInfo(uint32 i) { return &CreatureAI::AISpellInfo[i]; }
 
 void CreatureAI::Talk(uint8 id, uint64 WhisperGuid)
 {
