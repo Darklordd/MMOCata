@@ -70,8 +70,8 @@ Vehicle::Vehicle(Unit *unit, VehicleEntry const *vehInfo) : me(unit), m_vehicleI
 
 Vehicle::~Vehicle()
 {
-    for (SeatMap::const_iterator itr = m_Seats.begin(); itr != m_Seats.end(); ++itr)
-        ASSERT(!itr->second.passenger);
+    for (SeatMap::const_iterator itr = m_Seats.begin(); itr != m_Seats.end(); ++itr);
+        //ASSERT(!itr->second.passenger);
 }
 
 void Vehicle::Install()
@@ -186,7 +186,7 @@ void Vehicle::RemoveAllPassengers()
         if (Unit *passenger = ObjectAccessor::GetUnit(*GetBase(), itr->second.passenger))
         {
             ASSERT(passenger->IsInWorld());
-            ASSERT(passenger->IsOnVehicle(GetBase()));
+            //ASSERT(passenger->IsOnVehicle(GetBase()));
             ASSERT(GetSeatForPassenger(passenger));
 
             if (passenger->IsVehicle())
@@ -233,6 +233,7 @@ int8 Vehicle::GetNextEmptySeat(int8 seatId, bool next, bool byAura) const
 
     while (seat->second.passenger || (!byAura && !seat->second.seatInfo->CanEnterOrExit()) || (byAura && !seat->second.seatInfo->IsUsableByAura()))
     {
+		sLog->outDebug("Vehicle::GetNextEmptySeat: m_flags: %u, m_flagsB:%u", seat->second.seatInfo->m_flags, seat->second.seatInfo->m_flagsB);
         if (next)
         {
             ++seat;
@@ -290,7 +291,7 @@ bool Vehicle::AddPassenger(Unit *unit, int8 seatId, bool byAura)
     if (seatId < 0) // no specific seat requirement
     {
         for (seat = m_Seats.begin(); seat != m_Seats.end(); ++seat)
-            if (!seat->second.passenger && ((!byAura && seat->second.seatInfo->CanEnterOrExit()) || (byAura && seat->second.seatInfo->IsUsableByAura())))
+            if (!seat->second.passenger && (!byAura && seat->second.seatInfo->CanEnterOrExit()) || (byAura && seat->second.seatInfo->IsUsableByAura()))
                 break;
 
         if (seat == m_Seats.end()) // no available seat
@@ -306,7 +307,7 @@ bool Vehicle::AddPassenger(Unit *unit, int8 seatId, bool byAura)
             if (Unit* passenger = ObjectAccessor::GetUnit(*GetBase(), seat->second.passenger))
                 passenger->ExitVehicle();
             else
-                seat->second.passenger = NULL;
+                seat->second.passenger = 0;
 
         ASSERT(!seat->second.passenger);
     }
