@@ -3932,6 +3932,10 @@ void SpellMgr::LoadSpellCustomAttr()
             spellInfo->EffectImplicitTargetA[0] = TARGET_UNIT_CASTER;
             count++;
             break;
+        case 12051: // Evocation - now we can interrupt this
+            spellInfo->InterruptFlags |= SPELL_INTERRUPT_FLAG_INTERRUPT;
+            ++count;
+            break;
         case 25771: // Forbearance - wrong mechanic immunity in DBC since 3.0.x
             spellInfo->EffectMiscValue[0] = MECHANIC_IMMUNE_SHIELD;
             count++;
@@ -4109,6 +4113,15 @@ void SpellMgr::LoadSpellCustomAttr()
                 // Shout
                 if (spellInfo->SpellFamilyFlags[0] & 0x20000 || spellInfo->SpellFamilyFlags[1] & 0x20)
                     mSpellCustomAttr[i] |= SPELL_ATTR0_CU_AURA_CC;
+                else
+                    break;
+                count++;
+                break;
+            case SPELLFAMILY_HUNTER:
+                // Monstrous Bite target fix
+                // seems we incorrectly handle spell with "no target"
+                if (spellInfo->SpellIconID == 599)
+                    spellInfo->EffectImplicitTargetA[0] = TARGET_UNIT_CASTER;
                 else
                     break;
                 count++;
