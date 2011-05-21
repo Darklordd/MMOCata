@@ -1122,7 +1122,7 @@ void Player::HandleDrowning(uint32 time_diff)
     // In water
     if (m_MirrorTimerFlags & UNDERWATER_INWATER)
     {
-		if (m_zoneUpdateId == 5144) return;
+        if (m_zoneUpdateId == 5144) return;
         if (m_zoneUpdateId == 5145) return;
         if (m_zoneUpdateId == 4815) return;
         // Breath timer not activated - activate it
@@ -1161,7 +1161,7 @@ void Player::HandleDrowning(uint32 time_diff)
     // In dark water
     if (m_MirrorTimerFlags & UNDERWARER_INDARKWATER)
     {
-		if (m_zoneUpdateId == 5144) return;
+        if (m_zoneUpdateId == 5144) return;
         if (m_zoneUpdateId == 5145) return;
         if (m_zoneUpdateId == 4815) return;
         // Fatigue timer not activated - activate it
@@ -2599,7 +2599,16 @@ void Player::SetGameMaster(bool on)
     {
         m_ExtraFlags |= PLAYER_EXTRA_GM_ON;
         setFaction(35);
-        SetFlag(PLAYER_FLAGS, PLAYER_FLAGS_GM);
+
+        if(sWorld->getIntConfig(CONFIG_GM_DEV_TAG_ENABLE) == 1)
+        {
+            if(sWorld->getIntConfig(CONFIG_GM_DEV_TAG_LEVEL) == GetSession()->GetSecurity())
+                SetFlag(PLAYER_FLAGS, PLAYER_FLAGS_DEVELOPER);
+            else
+                SetFlag(PLAYER_FLAGS, PLAYER_FLAGS_GM);
+        }
+        else
+            SetFlag(PLAYER_FLAGS, PLAYER_FLAGS_GM);
 
         if (Pet* pet = GetPet())
         {
@@ -2631,6 +2640,7 @@ void Player::SetGameMaster(bool on)
         m_ExtraFlags &= ~ PLAYER_EXTRA_GM_ON;
         setFactionForRace(getRace());
         RemoveFlag(PLAYER_FLAGS, PLAYER_FLAGS_GM);
+        RemoveFlag(PLAYER_FLAGS, PLAYER_FLAGS_DEVELOPER);
 
         if (Pet* pet = GetPet())
         {
@@ -3060,7 +3070,7 @@ void Player::InitStatsForLevel(bool reapplyMods)
     // cleanup unit flags (will be re-applied if need at aura load).
     RemoveFlag(UNIT_FIELD_FLAGS,
         UNIT_FLAG_NON_ATTACKABLE | UNIT_FLAG_DISABLE_MOVE | UNIT_FLAG_NOT_ATTACKABLE_1 |
-		UNIT_FLAG_OOC_NOT_ATTACKABLE | UNIT_FLAG_PASSIVE  | UNIT_FLAG_LOOTING          |
+        UNIT_FLAG_OOC_NOT_ATTACKABLE | UNIT_FLAG_PASSIVE  | UNIT_FLAG_LOOTING          |
         UNIT_FLAG_PET_IN_COMBAT  | UNIT_FLAG_SILENCED     | UNIT_FLAG_PACIFIED         |
         UNIT_FLAG_STUNNED        | UNIT_FLAG_IN_COMBAT    | UNIT_FLAG_DISARMED         |
         UNIT_FLAG_CONFUSED       | UNIT_FLAG_FLEEING      | UNIT_FLAG_NOT_SELECTABLE   |
@@ -3070,7 +3080,7 @@ void Player::InitStatsForLevel(bool reapplyMods)
     SetFlag(UNIT_FIELD_FLAGS_2,UNIT_FLAG2_REGENERATE_POWER);// must be set
 
     // cleanup player flags (will be re-applied if need at aura load), to avoid have ghost flag without ghost aura, for example.
-    RemoveFlag(PLAYER_FLAGS, PLAYER_FLAGS_AFK | PLAYER_FLAGS_DND | PLAYER_FLAGS_GM | PLAYER_FLAGS_GHOST | PLAYER_ALLOW_ONLY_ABILITY);
+    RemoveFlag(PLAYER_FLAGS, PLAYER_FLAGS_AFK | PLAYER_FLAGS_DND | PLAYER_FLAGS_DEVELOPER | PLAYER_FLAGS_GM | PLAYER_FLAGS_GHOST | PLAYER_ALLOW_ONLY_ABILITY);
 
     RemoveStandFlags(UNIT_STAND_FLAGS_ALL);                 // one form stealth modified bytes
     RemoveByteFlag(UNIT_FIELD_BYTES_2, 1, UNIT_BYTE2_FLAG_FFA_PVP | UNIT_BYTE2_FLAG_SANCTUARY);

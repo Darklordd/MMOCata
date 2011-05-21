@@ -589,7 +589,37 @@ void Spell::SpellDamageSchoolDmg(SpellEffIndex effIndex)
                 break;
             }
             case SPELLFAMILY_PRIEST:
-            {
+            { 
+              //Evangelism and Dark Evangelism
+                if (m_caster->HasAura(81659)) // Rank 1
+                { 
+                    if (m_spellInfo->Id == 585)
+                    {
+                        m_caster->CastSpell(m_caster,81660,true);
+                    }
+                    
+                    else
+                    {
+                        if (m_spellInfo->Id == 15407)      // Dark Evangelism from Mind Flay                   
+                            m_caster->CastSpell(m_caster,87117,true);
+                    }
+                }
+                else
+                 
+                if (m_caster->HasAura(81662)) // Rank 2
+                {
+                    if (m_spellInfo->Id == 585)
+                    {
+                        m_caster->CastSpell(m_caster,81661,true);
+                    }
+                    
+                    else
+                    { 
+                        if (m_spellInfo->Id == 15407)      // Dark Evangelism from Mind Flay 
+                            m_caster->CastSpell(m_caster,87118,true);
+                    }     
+                }
+
                 // Shadow Word: Death - deals damage equal to damage done to caster
                 if ((m_spellInfo->SpellFamilyFlags[1] & 0x2))
                 {
@@ -1290,6 +1320,7 @@ void Spell::EffectDummy(SpellEffIndex effIndex)
                 m_caster->CastSpell(m_caster,51755,true);
             break;
         case SPELLFAMILY_PRIEST:
+        {   
             switch (m_spellInfo->Id)
             {
                 case 73325: // Leap of faith
@@ -1297,8 +1328,30 @@ void Spell::EffectDummy(SpellEffIndex effIndex)
                     unitTarget->CastSpell(m_caster, 92832, false);
                     break;
                 }
+                case 21562: // Power Word : Fortitude
+                {
+                    if (m_caster->GetTypeId() == TYPEID_PLAYER)
+                    {
+                        std::list<Unit*> PartyMembers;
+                        m_caster->GetPartyMembers(PartyMembers);
+                        bool Continue = false;
+                        uint32 player = 0;
+                        for(std::list<Unit*>::iterator itr = PartyMembers.begin(); itr != PartyMembers.end(); ++itr) // If caster is in party with a player
+                        {
+                            ++player;
+                            if (Continue == false && player > 1)
+                                Continue = true;
+                        }
+                        if (Continue == true)
+                            m_caster->CastSpell(unitTarget, 79105, true); // Power Word : Fortitude (Raid)
+                        else
+                            m_caster->CastSpell(unitTarget, 79104, true); // Power Word : Fortitude (Caster)
+                    }
+                    break;
+                }
             }
             break;
+        }
         case SPELLFAMILY_MAGE:
         {
             // Cone of Cold
@@ -1312,7 +1365,7 @@ void Spell::EffectDummy(SpellEffIndex effIndex)
                 {
                     m_caster->CastCustomSpell(unitTarget, 83302, &bp, NULL, NULL, true, 0);
                 }
-			}
+            }
             switch (m_spellInfo->Id)
             {
                 case 1459: // Arcane Brilliance
@@ -1478,7 +1531,8 @@ void Spell::EffectDummy(SpellEffIndex effIndex)
             }
             break;
         case SPELLFAMILY_DRUID:
-            // Starfall
+        // Starfall
+        {
             if (m_spellInfo->SpellFamilyFlags[2] & SPELLFAMILYFLAG2_DRUID_STARFALL)
             {
                 //Shapeshifting into an animal form or mounting cancels the effect.
@@ -1495,10 +1549,36 @@ void Spell::EffectDummy(SpellEffIndex effIndex)
 
                 m_caster->CastSpell(unitTarget, damage, true);
                 return;
-            }
-            break;
+             }
+             switch(m_spellInfo->Id)
+             {   
+                 case 1126: // Mark of the Wild
+                 {
+                     if (m_caster->GetTypeId() == TYPEID_PLAYER)
+                     {
+                         std::list<Unit*> PartyMembers;
+                         m_caster->GetPartyMembers(PartyMembers);
+                         bool Continue = false;
+                         uint32 player = 0;
+                         for(std::list<Unit*>::iterator itr = PartyMembers.begin(); itr != PartyMembers.end(); ++itr) // If caster is in party with a player
+                         {
+                             ++player;
+                             if (Continue == false && player > 1)
+                                 Continue = true;
+                         }
+                         if (Continue == true)
+                             m_caster->CastSpell(unitTarget, 79061, true); // Mark of the Wild (Raid)
+                         else
+                             m_caster->CastSpell(unitTarget, 79060, true); // Mark of the Wild (Caster)
+                         }
+                         break;
+                     } 
+                 }
+                 break;
+             }
         case SPELLFAMILY_PALADIN:
-            // Divine Storm
+        // Divine Storm
+        {
             if (m_spellInfo->SpellFamilyFlags[1] & SPELLFAMILYFLAG1_PALADIN_DIVINESTORM && effIndex == 1)
             {
                 int32 dmg = m_damage * damage / 100;
@@ -1509,16 +1589,58 @@ void Spell::EffectDummy(SpellEffIndex effIndex)
             }
 
             switch(m_spellInfo->Id)
-            {
-                case 31789:                                 // Righteous Defense (step 1)
+            {   
+                case 19740: // Blessing of Might
+                {
+                    if (m_caster->GetTypeId() == TYPEID_PLAYER)
+                    {
+                        std::list<Unit*> PartyMembers;
+                        m_caster->GetPartyMembers(PartyMembers);
+                        bool Continue = false;
+                        uint32 player = 0;
+                        for(std::list<Unit*>::iterator itr = PartyMembers.begin(); itr != PartyMembers.end(); ++itr) // If caster is in party with a player
+                        {
+                            ++player;
+                            if (Continue == false && player > 1)
+                                Continue = true;
+                        }
+                        if (Continue == true)
+                            m_caster->CastSpell(unitTarget, 79102, true); // Blessing of Might (Raid)
+                        else
+                            m_caster->CastSpell(unitTarget, 79101, true); // Blessing of Might (Caster)
+                    }
+                    break;
+                } 
+                case 20217: // Blessing of Kings
+                {
+                    if (m_caster->GetTypeId() == TYPEID_PLAYER)
+                    {
+                        std::list<Unit*> PartyMembers;
+                        m_caster->GetPartyMembers(PartyMembers);
+                        bool Continue = false;
+                        uint32 player = 0;
+                        for(std::list<Unit*>::iterator itr = PartyMembers.begin(); itr != PartyMembers.end(); ++itr) // If caster is in party with a player
+                        {
+                            ++player;
+                            if (Continue == false && player > 1)
+                                Continue = true;
+                        }
+                        if (Continue == true)               
+                            m_caster->CastSpell(unitTarget, 79063, true); // Blessing of Kings (Raid)
+                        else                                
+                            m_caster->CastSpell(unitTarget, 79062, true); // Blessing of Kings (Caster)
+                    }
+                    break;
+                } 
+                case 31789: // Righteous Defense (step 1)
                 {
                     // Clear targets for eff 1
                     for (std::list<TargetInfo>::iterator ihit = m_UniqueTargetInfo.begin(); ihit != m_UniqueTargetInfo.end(); ++ihit)
                         ihit->effectMask &= ~(1<<1);
-
+ 
                     // not empty (checked), copy
                     Unit::AttackerSet attackers = unitTarget->getAttackers();
-
+ 
                     // selected from list 3
                     uint32 maxTargets = std::min<uint32>(3, attackers.size());
                     for (uint32 i = 0; i < maxTargets; ++i)
@@ -1528,12 +1650,13 @@ void Spell::EffectDummy(SpellEffIndex effIndex)
                         AddUnitTarget(*aItr, 1);
                         attackers.erase(aItr);
                     }
-
+ 
                     // now let next effect cast spell at each target.
                     return;
                 }
             }
             break;
+        }
         case SPELLFAMILY_SHAMAN:
             // Cleansing Totem Pulse
             if (m_spellInfo->SpellFamilyFlags[0] & SPELLFAMILYFLAG_SHAMAN_TOTEM_EFFECTS && m_spellInfo->SpellIconID == 1673)
@@ -1581,11 +1704,11 @@ void Spell::EffectDummy(SpellEffIndex effIndex)
             }
             break;
         case SPELLFAMILY_DEATHKNIGHT:
-			// Hungering Cold
-			if (m_spellInfo->SpellFamilyFlags[1] & SPELLFAMILYFLAG1_DK_HUNGERING_COLD)
-			{
-				m_caster->CastCustomSpell(m_caster, 51209, &bp, NULL, NULL, true);
-			}
+            // Hungering Cold
+            if (m_spellInfo->SpellFamilyFlags[1] & SPELLFAMILYFLAG1_DK_HUNGERING_COLD)
+            {
+                m_caster->CastCustomSpell(m_caster, 51209, &bp, NULL, NULL, true);
+            }
             // Chains of Ice
             if (m_spellInfo->SpellFamilyFlags[0] & SPELLFAMILYFLAG_DK_CHAINS_OF_ICE)
             {
@@ -1601,8 +1724,7 @@ void Spell::EffectDummy(SpellEffIndex effIndex)
             // Death strike
             if (m_spellInfo->SpellFamilyFlags[0] & SPELLFAMILYFLAG_DK_DEATH_STRIKE)
             {
-                uint32 count = unitTarget->GetDiseasesByCaster(m_caster->GetGUID());
-                int32 bp = int32(count * m_caster->CountPctFromMaxHealth(int32(m_spellInfo->EffectDamageMultiplier[0])));
+                int32 bp = int32(m_caster->CountPctFromMaxHealth(7));
                 // Improved Death Strike
                 if (AuraEffect const * aurEff = m_caster->GetAuraEffect(SPELL_AURA_ADD_PCT_MODIFIER, SPELLFAMILY_DEATHKNIGHT, 2751, 0))
                     bp = int32(bp * (m_caster->CalculateSpellDamage(m_caster, aurEff->GetSpellProto(), 2) + 100.0f) / 100.0f);
@@ -1614,12 +1736,12 @@ void Spell::EffectDummy(SpellEffIndex effIndex)
             {
                 if (m_caster->IsFriendlyTo(unitTarget))
                 {
-                    int32 bp = int32(damage * 1.5f);
+                    int32 bp = (985 + damage) * 3.5;
                     m_caster->CastCustomSpell(unitTarget, 47633, &bp, NULL, NULL, true);
                 }
                 else
                 {
-                    int32 bp = damage;
+                    int32 bp = 985 + damage;
                     m_caster->CastCustomSpell(unitTarget, 47632, &bp, NULL, NULL, true);
                 }
                 return;
@@ -4248,7 +4370,12 @@ void Spell::SpellDamageWeaponDmg(SpellEffIndex effIndex)
                 (m_caster->HasAura(63220)) ? totalDamagePercentMod *= 1.15f : 0 ; // Glyphe of Templar's Verdict
                 m_caster->SetPower(POWER_HOLY_POWER, 0);
             }
-
+            // Word of Glory
+            if (m_spellInfo->Id == 85673)
+            {
+                m_caster->SetPower(POWER_HOLY_POWER, 0);
+            }
+            
             // Seal of Command Unleashed
             else if (m_spellInfo->Id == 20467)
             {
