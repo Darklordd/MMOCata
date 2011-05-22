@@ -482,44 +482,56 @@ void Spell::SpellDamageSchoolDmg(SpellEffIndex effIndex)
                             damage *= pow(1.0f - distance / radius, 2);
                         break; 
                     }
+                    // Rocket Barrage, Goblin racial spell
+                    case 69041:
+                    {
+                        damage = uint32(1 + (0.25f * m_caster->GetTotalAttackPowerValue(BASE_ATTACK)) +
+                            (0.429f * m_caster->SpellBaseDamageBonus(SPELL_SCHOOL_MASK_FIRE)) +
+                            (m_caster->getLevel() * 2) + (m_caster->GetStat(STAT_INTELLECT) * 0.50193f));
+                    }
                 }
                 break;
             }
             case SPELLFAMILY_WARRIOR:
             {
-                // Bloodthirst
-                if (m_spellInfo->SpellFamilyFlags[1] & 0x400)
-                    damage = uint32(damage * (m_caster->GetTotalAttackPowerValue(BASE_ATTACK)) / 100);
-                // Victory Rush
-                else if (m_spellInfo->SpellFamilyFlags[1] & 0x100)
-                {
-                    damage = uint32(damage * m_caster->GetTotalAttackPowerValue(BASE_ATTACK) / 100);
-                    m_caster->ModifyAuraState(AURA_STATE_WARRIOR_VICTORY_RUSH, false);
-                }
+               // Bloodthirst
+               if (m_spellInfo->SpellFamilyFlags[1] & 0x400)
+                   damage = uint32(damage * (m_caster->GetTotalAttackPowerValue(BASE_ATTACK)) / 100);
+               // Victory Rush
+               else if (m_spellInfo->SpellFamilyFlags[1] & 0x100)
+               {
+                damage = uint32(damage * m_caster->GetTotalAttackPowerValue(BASE_ATTACK) / 100);
+                m_caster->ModifyAuraState(AURA_STATE_WARRIOR_VICTORY_RUSH, false);
+               }
                // Cleave
                else if (m_spellInfo->Id == 845)
-                {
+               {
                damage = uint32(6+ m_caster->GetTotalAttackPowerValue(BASE_ATTACK)* 0.45);
-                }
+               }
+               // Intercept
+                 else if (m_spellInfo->Id == 20253)
+                 {
+                 damage = uint32(1 + m_caster->GetTotalAttackPowerValue(BASE_ATTACK) * 0.12);
+                 }
                // Execute
                else if (m_spellInfo->Id ==5308)
-                {
+               {
                damage = uint32 (10 + m_caster->GetTotalAttackPowerValue(BASE_ATTACK)* 0.437*100/100);  
-                }
-                // Heroic Strike
-                else if (m_spellInfo->Id == 78)
-                {
-                    damage = uint32(8 + m_caster->GetTotalAttackPowerValue(BASE_ATTACK)* 60 / 100);
-                }
-                // Shockwave
-                else if (m_spellInfo->Id == 46968)
-                {
-                    int32 pct = m_caster->CalculateSpellDamage(unitTarget, m_spellInfo, 2);
-                    if (pct > 0)
-                        damage+= int32(m_caster->GetTotalAttackPowerValue(BASE_ATTACK) * pct / 100);
+               }
+               // Heroic Strike
+               else if (m_spellInfo->Id == 78)
+               {
+                damage = uint32(8 + m_caster->GetTotalAttackPowerValue(BASE_ATTACK)* 60 / 100);
+               }
+               // Shockwave
+               else if (m_spellInfo->Id == 46968)
+               {
+                int32 pct = m_caster->CalculateSpellDamage(unitTarget, m_spellInfo, 2);
+                if (pct > 0)
+                    damage+= int32(m_caster->GetTotalAttackPowerValue(BASE_ATTACK) * pct / 100);
                     break;
-                }
-                break;
+               }
+               break;
             }
             case SPELLFAMILY_WARLOCK:
             {
@@ -742,7 +754,14 @@ void Spell::SpellDamageSchoolDmg(SpellEffIndex effIndex)
                 break;
             }
             case SPELLFAMILY_HUNTER:
-            {
+            {   // Rapid Recuperation
+                if (m_caster->HasAura(3045))      			   
+                      if (m_caster->HasAura(53228)) 			   // Rank 1
+                          m_caster->CastSpell(m_caster,53230,true);
+                    else
+                      if (m_caster->HasAura(53232)) 			   // Rank 2
+                          m_caster->CastSpell(m_caster,54227,true);
+
                 //Gore
                 if (m_spellInfo->SpellIconID == 1578)
                 {
@@ -771,7 +790,22 @@ void Spell::SpellDamageSchoolDmg(SpellEffIndex effIndex)
                 break;
             }
             case SPELLFAMILY_DEATHKNIGHT:
-            {
+            {   
+                // Ebon Plaguebringer 
+                  if(m_caster->HasAura(51099)) // Rank 1
+                  {
+                     if(m_spellInfo->Id == 45462 || m_spellInfo->Id == 45477 || m_spellInfo->Id == 45524)
+                     m_caster->CastSpell(unitTarget,65142,true);
+                  }
+                  else
+                  if(m_caster->HasAura(51160)) // Rank 2
+                  {
+                     if(m_spellInfo->Id == 45462 || m_spellInfo->Id == 45477 || m_spellInfo->Id == 45524) 
+                     m_caster->CastSpell(unitTarget,65142,true);
+                  }
+                
+               else 
+
                 // Blood Boil - bonus for diseased targets
                 if (m_spellInfo->SpellFamilyFlags[0] & 0x00040000 && unitTarget->GetAuraEffect(SPELL_AURA_PERIODIC_DAMAGE, SPELLFAMILY_DEATHKNIGHT, 0, 0, 0x00000002, m_caster->GetGUID()))
                 {
