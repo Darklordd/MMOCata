@@ -3719,7 +3719,7 @@ void SpellMgr::LoadSpellCustomAttr()
             spellInfo->AuraInterruptFlags = AURA_INTERRUPT_FLAG_TAKE_DAMAGE;
             count++;
             break;
-	    case 85673: // World of Glory
+        case 85673: // World of Glory
             spellInfo->Effect[1] = 0;
             count++;
             break;
@@ -3816,6 +3816,7 @@ void SpellMgr::LoadSpellCustomAttr()
         case 26029: // dark glare
         case 37433: // spout
         case 43140: case 43215: // flame breath
+        case 70461: // Coldflame Trap
             mSpellCustomAttr[i] |= SPELL_ATTR0_CU_CONE_LINE;
             count++;
             break;
@@ -3849,6 +3850,8 @@ void SpellMgr::LoadSpellCustomAttr()
         case 69782: case 69796:                 // Ooze Flood
         case 69798: case 69801:                 // Ooze Flood
         case 69538: case 69553: case 69610:     // Ooze Combine
+        case 71447: case 71481:                 // Bloodbolt Splash
+        case 71482: case 71483:                 // Bloodbolt Splash
             mSpellCustomAttr[i] |= SPELL_ATTR0_CU_EXCLUDE_SELF;
             count++;
             break;
@@ -4170,6 +4173,10 @@ void SpellMgr::LoadSpellCustomAttr()
             spellInfo->EffectSpellClassMask[0] = flag96(0x00000040, 0x00000000, 0x00000000);
             count++;
             break;
+        case 70460: // Coldflame Jets (Traps after Saurfang)
+            spellInfo->DurationIndex = 1;   // 10 seconds
+            count++;
+            break;
         case 71413: // Green Ooze Summon
         case 71414: // Orange Ooze Summon
             spellInfo->EffectImplicitTargetA[0] = TARGET_DEST_DEST;
@@ -4209,13 +4216,17 @@ void SpellMgr::LoadSpellCustomAttr()
             spellInfo->EffectRadiusIndex[0] = 28;   // another missing radius
             count++;
             break;
-        case 71708: // Empowered Flare
-        case 72785: // Empowered Flare
-        case 72786: // Empowered Flare
-        case 72787: // Empowered Flare
+        case 71708: // Empowered Flare (Blood Prince Council)
+        case 72785: // Empowered Flare (Blood Prince Council)
+        case 72786: // Empowered Flare (Blood Prince Council)
+        case 72787: // Empowered Flare (Blood Prince Council)
             spellInfo->AttributesEx3 |= SPELL_ATTR3_NO_DONE_BONUS;
             count++;
             break;
+         case 71340: // Pact of the Darkfallen (Blood-Queen Lana'thel)
+             spellInfo->DurationIndex = 21;
+             count++;
+             break;
         case 44614: // Frostfire Bolt
             spellInfo->StackAmount = 0; //TODO: remove when stacking of Decrease Run Speed % aura is fixed
             break;
@@ -4247,11 +4258,26 @@ void SpellMgr::LoadSpellCustomAttr()
             spellInfo->EffectMiscValue[1] = 127;
             count++;
             break;
+        case 71357: // Order Whelp
+            spellInfo->EffectRadiusIndex[0] = 22;
+            count++;
+            break;
+        case 70598: // Sindragosa's Fury
+            spellInfo->EffectImplicitTargetA[0] = TARGET_DST_CASTER;
+            count++;
+            break;
+        case 69846: // Frost Bomb
+            spellInfo->speed = 10;
+            spellInfo->EffectImplicitTargetA[0] = TARGET_DEST_TARGET_ANY;
+            spellInfo->EffectImplicitTargetB[0] = TARGET_UNIT_TARGET_ANY;
+            spellInfo->Effect[1] = 0;
+            count++;
+            break;
         default:
             break;
         }
 
-        switch(spellInfo->SpellFamilyName)
+        switch (spellInfo->SpellFamilyName)
         {
             case SPELLFAMILY_WARRIOR:
                 // Shout
