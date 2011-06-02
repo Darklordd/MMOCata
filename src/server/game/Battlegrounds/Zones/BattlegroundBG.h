@@ -23,13 +23,32 @@
 #ifndef __BattlegroundBG_H
 #define __BattlegroundBG_H
 
+
 class Battleground;
+
+enum BG_BG_Sounds
+{
+    BG_BG_SOUND_NODE_CLAIMED            = 8192,
+    BG_BG_SOUND_NODE_CAPTURED_ALLIANCE  = 8173,
+    BG_BG_SOUND_NODE_CAPTURED_HORDE     = 8213,
+    BG_BG_SOUND_NODE_ASSAULTED_ALLIANCE = 8212,
+    BG_BG_SOUND_NODE_ASSAULTED_HORDE    = 8174,
+    BG_BG_SOUND_NEAR_VICTORY            = 8456
+};
+
+enum BG_BG_Objectives
+{
+    BG_OBJECTIVE_ASSAULT_BASE           = 122,
+    BG_OBJECTIVE_DEFEND_BASE            = 123
+};
 
 class BattlegroundBGScore : public BattlegroundScore
 {
     public:
-        BattlegroundBGScore() {};
+        BattlegroundBGScore(): BasesAssaulted(0), BasesDefended(0) {};
         virtual ~BattlegroundBGScore() {};
+        uint32 BasesAssaulted;
+        uint32 BasesDefended;
 };
 
 class BattlegroundBG : public Battleground
