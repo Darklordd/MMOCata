@@ -64,6 +64,12 @@ enum BG_BG_Timers
     BG_BG_FLAG_CAPTURING_TIME   = 60000,
 };
 
+enum BG_BG_Score
+{
+    BG_BG_WARNING_NEAR_VICTORY_SCORE    = 1800,
+    BG_BG_MAX_TEAM_SCORE                = 2000
+};
+
 /* do NOT change the order, else wrong behaviour */
 enum BG_BG_BattlegroundNodes
 {
@@ -104,6 +110,25 @@ enum BG_BG_Objectives
 {
     BG_OBJECTIVE_ASSAULT_BASE           = 122,
     BG_OBJECTIVE_DEFEND_BASE            = 123
+};
+
+// x, y, z, o, rot0, rot1, rot2, rot3
+const float BG_BG_DoorPositions[2][8] = {
+    {918.876f, 1336.56f, 27.6195f, 2.77481f, 0.0f, 0.0f, 0.983231f, 0.182367f},
+    {1396.15f, 977.014f, 7.43169f, 6.27043f, 0.0f, 0.0f, 0.006378f, -0.99998f}
+};
+
+const uint32 BG_BG_TickIntervals[4] = {0, 12000, 6000, 1000};
+const uint32 BG_BG_TickPoints[4] = {0, 10, 10, 30};
+
+// WorldSafeLocs ids for 3 nodes, and for ally, and horde starting location
+const uint32 BG_BG_GraveyardIds[BG_BG_ALL_NODES_COUNT] = {1735, 1736, 1738, 1739, 1740};
+
+struct BG_BG_BannerTimer
+{
+    uint32      timer;
+    uint8       type;
+    uint8       teamIndex;
 };
 
 class BattlegroundBGScore : public BattlegroundScore
