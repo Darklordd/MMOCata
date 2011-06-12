@@ -166,9 +166,10 @@ typedef UNORDERED_MAP<uint32 /*instanceId*/, time_t/*releaseTime*/> InstanceTime
 
 enum TrainerSpellState
 {
-    TRAINER_SPELL_ALREADY_LEARN = 00,
-    TRAINER_SPELL_CAN_LEARN     = 01,
-    TRAINER_SPELL_CANT_LEARN    = 02
+	TRAINER_SPELL_GREEN = 01,
+	TRAINER_SPELL_RED   = 02,
+	TRAINER_SPELL_GRAY  = 00,
+	TRAINER_SPELL_GREEN_DISABLED = 10               // custom value, not send to client: formally green but learn not allowed
 };
 
 enum ActionButtonUpdateState
@@ -765,9 +766,9 @@ enum RestType
 
 enum DuelCompleteType
 {
-    DUEL_INTERUPTED = 0,
-    DUEL_WON        = 1,
-    DUEL_FLED       = 2
+    DUEL_INTERRUPTED = 0,
+    DUEL_WON         = 1,
+    DUEL_FLED        = 2
 };
 
 enum TeleportToOptions
@@ -1858,7 +1859,7 @@ class Player : public Unit, public GridObject<Player>
         float GetDodgeFromAgility();
         float GetSpellCritFromIntellect();
         float OCTRegenMPPerSpirit();
-        float GetRatingCoefficient(CombatRating cr) const;
+        float GetRatingMultiplier(CombatRating cr) const;
         float GetRatingBonusValue(CombatRating cr) const;
         uint32 GetBaseSpellPowerBonus() { return m_spellPowerFromIntellect + m_baseSpellPower; }
         int32 GetSpellPenetrationItemMod() const { return m_spellPenetrationItemMod; }
